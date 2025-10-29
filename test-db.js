@@ -1,7 +1,7 @@
 // Teste de conexão manual com Supabase
 const { Pool } = require('pg');
 
-const DATABASE_URL = 'postgresql://postgres.jzezbecvjquqxjnilvya:Sen123456%21@aws-0-eu-central-1.pooler.supabase.com:6543/postgres';
+const DATABASE_URL = 'postgresql://postgres.jzezbecvjquqxjnilvya:Dan31018858*@aws-1-eu-west-1.pooler.supabase.com:5432/postgres';
 
 console.log('🔗 Testando conexão com Supabase...');
 console.log('URL:', DATABASE_URL.substring(0, 50) + '...');
