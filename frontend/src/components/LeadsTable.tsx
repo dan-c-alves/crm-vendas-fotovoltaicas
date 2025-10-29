@@ -3,7 +3,7 @@
 import React from 'react';
 import { FiEdit, FiTrash2, FiEye } from 'react-icons/fi';
 import clsx from 'clsx';
-import { formatCurrency } from '@/utils/format';
+import { formatCurrency } from '../utils/format';
 
 interface Lead {
   id: number;

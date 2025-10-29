@@ -4,7 +4,7 @@ import React, { useState } from 'react';
 import { FiX, FiUser, FiCalendar, FiMessageCircle, FiDollarSign, FiCheckCircle, FiExternalLink } from 'react-icons/fi';
 import { useRouter } from 'next/navigation';
 import toast from 'react-hot-toast';
-import { emitLeadUpdate } from '@/hooks/useTaskUpdates';
+import { emitLeadUpdate } from '../hooks/useTaskUpdates';
 
 interface TaskItem {
   id: number;

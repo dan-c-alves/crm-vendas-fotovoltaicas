@@ -2,9 +2,9 @@
 
 import React, { useState, useEffect } from 'react';
 import { FiX } from 'react-icons/fi';
-import { apiClient } from '@/utils/api';
+import { apiClient } from '../utils/api';
 import toast from 'react-hot-toast';
-import { emitLeadUpdate } from '@/hooks/useTaskUpdates';
+import { emitLeadUpdate } from '../hooks/useTaskUpdates';
 
 interface Lead {
   id?: number;

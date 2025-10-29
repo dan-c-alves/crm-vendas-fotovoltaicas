@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { FiHome, FiUsers, FiTrendingUp, FiSettings, FiMenu, FiX, FiCheckSquare } from 'react-icons/fi';
 import clsx from 'clsx';
-import { useTaskUpdates } from '@/hooks/useTaskUpdates';
+import { useTaskUpdates } from '../hooks/useTaskUpdates';
 
 interface SidebarProps {
   isOpen: boolean;

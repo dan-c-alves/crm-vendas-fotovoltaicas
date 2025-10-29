@@ -1,7 +1,7 @@
 // frontend/src/app/layout.tsx
 
 import type { Metadata, Viewport } from 'next';
-import '@/styles/globals.css';
+import '../styles/globals.css';
 
 export const metadata: Metadata = {
   title: 'CRM Vendas Fotovoltaicas',
