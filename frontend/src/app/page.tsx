@@ -31,7 +31,7 @@ export default function Dashboard() {
         setLoading(true);
         
         // Buscar dados do dashboard
-        const response = await fetch('http://localhost:8000/api/leads/analytics/dashboard');
+        const response = await fetch('/api/leads/analytics/dashboard');
         if (!response.ok) {
           throw new Error('Erro ao carregar dados');
         }
@@ -43,7 +43,7 @@ export default function Dashboard() {
         
         // Buscar múltiplas páginas para garantir que pegamos todas as vendas
         for (let page = 1; page <= 2; page++) {
-          const leadsResponse = await fetch(`http://localhost:8000/api/leads/?page=${page}&page_size=100`);
+          const leadsResponse = await fetch(`/api/leads/?page=${page}&page_size=100`);
           if (leadsResponse.ok) {
             const leadsData = await leadsResponse.json();
             const vendasPage = leadsData.data.filter((lead: any) => lead.status === 'Ganho');
