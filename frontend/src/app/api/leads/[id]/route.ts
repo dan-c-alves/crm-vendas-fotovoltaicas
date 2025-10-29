@@ -1,5 +1,24 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { executeQuery } from '../../../../lib/db';
+import { Pool } from 'pg';
+
+// Pool inline para evitar problemas de importação
+let pool: Pool | null = null;
+
+function getPool(): Pool {
+  if (!pool) {
+    pool = new Pool({
+      connectionString: process.env.DATABASE_URL,
+      ssl: process.env.NODE_ENV === 'production' ? {
+        rejectUnauthorized: false
+      } : false,
+      connectionTimeoutMillis: 60000,
+      idleTimeoutMillis: 600000,
+      max: 1,
+      allowExitOnIdle: true
+    });
+  }
+  return pool;
+}
 
 export async function GET(
   request: NextRequest,
@@ -29,7 +48,7 @@ export async function GET(
         ativo
       FROM leads WHERE id = $1
     `;
-    const result = await executeQuery(query, [id]);
+    const result = await getPool().query(query, [id]);
 
     if (result.rows.length === 0) {
       return NextResponse.json(
@@ -92,7 +111,7 @@ export async function PUT(
       observacoes, valor_estimado, status, id
     ];
 
-    const result = await executeQuery(query, values);
+    const result = await getPool().query(query, values);
 
     if (result.rows.length === 0) {
       return NextResponse.json(
@@ -120,7 +139,7 @@ export async function DELETE(
     const { id } = params;
 
     const query = 'DELETE FROM leads WHERE id = $1 RETURNING *';
-    const result = await executeQuery(query, [id]);
+    const result = await getPool().query(query, [id]);
 
     if (result.rows.length === 0) {
       return NextResponse.json(

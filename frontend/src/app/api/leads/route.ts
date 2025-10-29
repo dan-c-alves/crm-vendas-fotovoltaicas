@@ -1,5 +1,24 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getPool, executeQuery } from '../../../lib/db';
+import { Pool } from 'pg';
+
+// Pool inline para evitar problemas de importação
+let pool: Pool | null = null;
+
+function getPool(): Pool {
+  if (!pool) {
+    pool = new Pool({
+      connectionString: process.env.DATABASE_URL,
+      ssl: process.env.NODE_ENV === 'production' ? {
+        rejectUnauthorized: false
+      } : false,
+      connectionTimeoutMillis: 60000,
+      idleTimeoutMillis: 600000,
+      max: 1,
+      allowExitOnIdle: true
+    });
+  }
+  return pool;
+}
 
 export async function GET(request: NextRequest) {
   try {
@@ -7,7 +26,7 @@ export async function GET(request: NextRequest) {
     console.log('DATABASE_URL disponível:', !!process.env.DATABASE_URL);
 
     // Teste de conexão
-    await executeQuery('SELECT 1');
+    await getPool().query('SELECT 1');
     console.log('Conexão com banco OK');
     const { searchParams } = new URL(request.url);
     const page = parseInt(searchParams.get('page') || '1');
@@ -35,7 +54,7 @@ export async function GET(request: NextRequest) {
 
     // Query para contar total
     const countQuery = `SELECT COUNT(*) FROM leads ${whereClause}`;
-    const countResult = await executeQuery(countQuery, params);
+    const countResult = await getPool().query(countQuery, params);
     const total = parseInt(countResult.rows[0].count);
 
     // Query para buscar leads
@@ -65,7 +84,7 @@ export async function GET(request: NextRequest) {
       LIMIT $${paramCount + 1} OFFSET $${paramCount + 2}
     `;
     
-    const result = await executeQuery(query, params);
+    const result = await getPool().query(query, params);
 
     return NextResponse.json({
       data: result.rows,
@@ -128,7 +147,7 @@ export async function POST(request: NextRequest) {
       observacoes, valor_estimado, status
     ];
 
-    const result = await executeQuery(query, values);
+    const result = await getPool().query(query, values);
 
     return NextResponse.json(result.rows[0], { status: 201 });
 
