@@ -131,7 +131,7 @@ export default function TarefasPage() {
   const handleCompleteTask = async (taskId: number) => {
     try {
       const response = await apiClient.updateLead(taskId, {
-        proxima_acao: null
+        proxima_acao: ''
       });
       
       toast.success('Tarefa concluída!');
