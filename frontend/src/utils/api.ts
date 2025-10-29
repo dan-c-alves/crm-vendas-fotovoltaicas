@@ -21,19 +21,19 @@ interface Lead {
 const apiClient = {
   // Leads
   async getLeads(page = 1, pageSize = 20): Promise<any> {
-    const response = await fetch(`${API_URL}/api/leads?page=${page}&page_size=${pageSize}`);
+    const response = await fetch(`/api/leads?page=${page}&limit=${pageSize}`);
     if (!response.ok) throw new Error('Erro ao buscar leads');
     return response.json();
   },
 
   async getLead(id: number): Promise<Lead> {
-    const response = await fetch(`${API_URL}/api/leads/${id}`);
+    const response = await fetch(`/api/leads/${id}`);
     if (!response.ok) throw new Error('Lead não encontrado');
     return response.json();
   },
 
   async createLead(lead: Partial<Lead>): Promise<Lead> {
-    const response = await fetch(`${API_URL}/api/leads`, {
+    const response = await fetch(`/api/leads`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(lead),
@@ -43,7 +43,7 @@ const apiClient = {
   },
 
   async updateLead(id: number, lead: Partial<Lead>): Promise<Lead> {
-    const response = await fetch(`${API_URL}/api/leads/${id}`, {
+    const response = await fetch(`/api/leads/${id}`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(lead),
@@ -53,7 +53,7 @@ const apiClient = {
   },
 
   async deleteLead(id: number): Promise<void> {
-    const response = await fetch(`${API_URL}/api/leads/${id}`, {
+    const response = await fetch(`/api/leads/${id}`, {
       method: 'DELETE',
     });
     if (!response.ok) throw new Error('Erro ao deletar lead');
@@ -61,7 +61,7 @@ const apiClient = {
 
   // Upload de Imagem
   async uploadImage(formData: FormData): Promise<{ url: string }> {
-    const response = await fetch(`${API_URL}/api/upload/image`, {
+    const response = await fetch(`/api/upload/image`, {
       method: 'POST',
       body: formData,
     });
@@ -75,14 +75,14 @@ const apiClient = {
 
   // Analytics
   async getDashboardStats(): Promise<any> {
-    const response = await fetch(`${API_URL}/api/leads/analytics/dashboard`);
+    const response = await fetch(`/api/leads/analytics/dashboard`);
     if (!response.ok) throw new Error('Erro ao buscar estatísticas');
     return response.json();
   },
 
   // Buscar leads por status específico
   async getLeadsByStatus(status: string): Promise<any> {
-    const response = await fetch(`${API_URL}/api/leads/?status=${encodeURIComponent(status)}&page_size=1000`);
+    const response = await fetch(`/api/leads?status=${encodeURIComponent(status)}&limit=1000`);
     if (!response.ok) throw new Error('Erro ao buscar leads por status');
     return response.json();
   },

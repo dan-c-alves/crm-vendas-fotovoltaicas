@@ -43,7 +43,7 @@ export default function Dashboard() {
         
         // Buscar múltiplas páginas para garantir que pegamos todas as vendas
         for (let page = 1; page <= 2; page++) {
-          const leadsResponse = await fetch(`/api/leads/?page=${page}&page_size=100`);
+          const leadsResponse = await fetch(`/api/leads?page=${page}&limit=100`);
           if (leadsResponse.ok) {
             const leadsData = await leadsResponse.json();
             const vendasPage = leadsData.data.filter((lead: any) => lead.status === 'Ganho');
@@ -62,18 +62,22 @@ export default function Dashboard() {
         
         // Mapear os dados para o formato esperado
         setStats({
-          total_leads: data.total_leads || 0,
+          total_leads: data.totalLeads || 0,
           total_vendas: total_vendas,
           valor_total_vendas: valor_total_com_iva,
           valor_total_sem_iva: valor_total_sem_iva,
           comissao_total: comissao_total,
-          taxa_conversao: data.total_leads > 0 ? (total_vendas / data.total_leads) * 100 : 0,
+          taxa_conversao: data.totalLeads > 0 ? (total_vendas / data.totalLeads) * 100 : 0,
           valor_medio_venda: total_vendas > 0 ? valor_total_com_iva / total_vendas : 0,
           comissao_media: comissao_media
         });
         
         // Configurar dados do funil
-        setFunil(data.leads_por_status || {});
+        const funilData: Record<string, number> = {};
+        data.leadsByStatus?.forEach((item: any) => {
+          funilData[item.status] = parseInt(item.count);
+        });
+        setFunil(funilData);
         
         // Configurar vendas por mês (dados fictícios por enquanto)
         setVendas({

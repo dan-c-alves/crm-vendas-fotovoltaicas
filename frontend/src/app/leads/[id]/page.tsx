@@ -55,7 +55,7 @@ export default function LeadEditPage({ params }: { params: { id: string } }) {
       }
 
       try {
-        const response = await fetch(`http://localhost:8000/api/leads/${leadId}`);
+        const response = await fetch(`/api/leads/${leadId}`);
         if (!response.ok) throw new Error('Lead não encontrado');
         const lead = await response.json();
         
@@ -90,7 +90,7 @@ export default function LeadEditPage({ params }: { params: { id: string } }) {
 
       toast.loading('A carregar imagem...', { id: 'upload' });
       
-      const response = await fetch('http://localhost:8000/api/upload/image', {
+      const response = await fetch('/api/upload/image', {
         method: 'POST',
         body: formDataUpload,
       });
@@ -117,8 +117,8 @@ export default function LeadEditPage({ params }: { params: { id: string } }) {
 
     try {
       const url = leadId === 0 
-        ? 'http://localhost:8000/api/leads'
-        : `http://localhost:8000/api/leads/${leadId}`;
+        ? '/api/leads'
+        : `/api/leads/${leadId}`;
       
       const method = leadId === 0 ? 'POST' : 'PUT';
       

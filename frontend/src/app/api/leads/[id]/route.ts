@@ -18,7 +18,27 @@ export async function GET(
   try {
     const { id } = params;
 
-    const query = 'SELECT * FROM leads WHERE id = $1';
+    const query = `
+      SELECT 
+        id,
+        nome_lead as nome,
+        email,
+        telefone,
+        morada as endereco,
+        status,
+        valor_venda_com_iva as valor_estimado,
+        valor_proposta,
+        comissao_valor,
+        notas_conversa as observacoes,
+        data_entrada as created_at,
+        data_atualizacao as updated_at,
+        proxima_acao,
+        url_imagem_cliente,
+        origem,
+        tags,
+        ativo
+      FROM leads WHERE id = $1
+    `;
     const result = await pool.query(query, [id]);
 
     if (result.rows.length === 0) {
@@ -61,11 +81,20 @@ export async function PUT(
 
     const query = `
       UPDATE leads SET 
-        nome = $1, email = $2, telefone = $3, endereco = $4,
-        fonte = $5, interesse = $6, observacoes = $7,
-        valor_estimado = $8, status = $9, updated_at = CURRENT_TIMESTAMP
+        nome_lead = $1, email = $2, telefone = $3, morada = $4,
+        origem = $5, interesse = $6, notas_conversa = $7,
+        valor_venda_com_iva = $8, status = $9, data_atualizacao = NOW()
       WHERE id = $10
-      RETURNING *
+      RETURNING 
+        id,
+        nome_lead as nome,
+        email,
+        telefone,
+        morada as endereco,
+        status,
+        valor_venda_com_iva as valor_estimado,
+        data_entrada as created_at,
+        data_atualizacao as updated_at
     `;
 
     const values = [

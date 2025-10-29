@@ -27,11 +27,10 @@ interface Lead {
 }
 
 interface LeadsResponse {
-  data: Lead[]; // Mudado de 'leads' para 'data'
+  data: Lead[];
   total: number;
   page: number;
-  page_size: number;
-  total_pages: number;
+  totalPages: number;
 }
 
 const statusOptions = [
@@ -63,11 +62,8 @@ export default function LeadsPage() {
     try {
       setLoading(true);
       
-      // Usar API_URL da configuração
-      const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
-      
-      // Construir URL com filtros
-      let url = `${API_URL}/api/leads/?page=${currentPage}&page_size=20`;
+      // Construir URL com filtros - usar API Routes local
+      let url = `/api/leads?page=${currentPage}&limit=20`;
       
       if (search.trim()) {
         url += `&search=${encodeURIComponent(search.trim())}`;
@@ -89,7 +85,7 @@ export default function LeadsPage() {
       
       setLeads(data.data || []);
       setTotal(data.total || 0);
-      setTotalPages(data.total_pages || 1);
+      setTotalPages(data.totalPages || 1);
       setPage(data.page || 1);
       
     } catch (error) {
@@ -141,7 +137,7 @@ export default function LeadsPage() {
     }
 
     try {
-      const response = await fetch(`http://localhost:8000/api/leads/${id}`, {
+      const response = await fetch(`/api/leads/${id}`, {
         method: 'DELETE',
       });
 

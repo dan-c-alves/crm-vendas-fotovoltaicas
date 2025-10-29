@@ -7,13 +7,19 @@ const pool = new Pool({
   ssl: {
     rejectUnauthorized: false
   },
-  connectionTimeoutMillis: 5000,
-  idleTimeoutMillis: 10000,
-  max: 10
+  connectionTimeoutMillis: 10000,
+  idleTimeoutMillis: 30000,
+  max: 5
 });
 
 export async function GET(request: NextRequest) {
   try {
+    console.log('API leads GET chamada');
+    console.log('DATABASE_URL disponível:', !!process.env.DATABASE_URL);
+
+    // Teste de conexão
+    await pool.query('SELECT 1');
+    console.log('Conexão com banco OK');
     const { searchParams } = new URL(request.url);
     const page = parseInt(searchParams.get('page') || '1');
     const limit = parseInt(searchParams.get('limit') || '10');
@@ -28,7 +34,7 @@ export async function GET(request: NextRequest) {
 
     if (search) {
       paramCount++;
-      whereClause += ` AND (nome ILIKE $${paramCount} OR email ILIKE $${paramCount} OR telefone ILIKE $${paramCount})`;
+      whereClause += ` AND (nome_lead ILIKE $${paramCount} OR email ILIKE $${paramCount} OR telefone ILIKE $${paramCount})`;
       params.push(`%${search}%`);
     }
 
@@ -46,16 +52,34 @@ export async function GET(request: NextRequest) {
     // Query para buscar leads
     params.push(limit, offset);
     const query = `
-      SELECT * FROM leads 
+      SELECT 
+        id,
+        nome_lead as nome,
+        email,
+        telefone,
+        morada as endereco,
+        status,
+        valor_venda_com_iva as valor_estimado,
+        valor_proposta,
+        comissao_valor,
+        notas_conversa as observacoes,
+        data_entrada as created_at,
+        data_atualizacao as updated_at,
+        proxima_acao,
+        url_imagem_cliente,
+        origem,
+        tags,
+        ativo
+      FROM leads 
       ${whereClause}
-      ORDER BY created_at DESC 
+      ORDER BY data_entrada DESC 
       LIMIT $${paramCount + 1} OFFSET $${paramCount + 2}
     `;
     
     const result = await pool.query(query, params);
 
     return NextResponse.json({
-      leads: result.rows,
+      data: result.rows,
       total,
       page,
       totalPages: Math.ceil(total / limit)
@@ -82,7 +106,7 @@ export async function POST(request: NextRequest) {
       interesse,
       observacoes,
       valor_estimado,
-      status = 'novo'
+      status = 'Entrada de Lead'
     } = body;
 
     // Validações básicas
@@ -95,10 +119,19 @@ export async function POST(request: NextRequest) {
 
     const query = `
       INSERT INTO leads (
-        nome, email, telefone, endereco, fonte, interesse, 
-        observacoes, valor_estimado, status
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
-      RETURNING *
+        nome_lead, email, telefone, morada, origem, interesse, 
+        notas_conversa, valor_venda_com_iva, status, data_entrada, data_atualizacao
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, NOW(), NOW())
+      RETURNING 
+        id,
+        nome_lead as nome,
+        email,
+        telefone,
+        morada as endereco,
+        status,
+        valor_venda_com_iva as valor_estimado,
+        data_entrada as created_at,
+        data_atualizacao as updated_at
     `;
 
     const values = [

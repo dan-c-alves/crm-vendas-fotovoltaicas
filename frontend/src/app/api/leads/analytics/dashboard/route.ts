@@ -1,21 +1,27 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { Pool } from 'pg';
 
+// Configuração mais robusta do pool
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
   ssl: {
     rejectUnauthorized: false
   },
-  connectionTimeoutMillis: 5000,
-  idleTimeoutMillis: 10000,
-  max: 10
+  connectionTimeoutMillis: 10000,
+  idleTimeoutMillis: 30000,
+  max: 5
 });
 
 export async function GET(request: NextRequest) {
   try {
-    // Teste de conexão primeiro
-    await pool.query('SELECT 1');
+    // Log para debug
+    console.log('DATABASE_URL disponível:', !!process.env.DATABASE_URL);
     
+    // Teste de conexão simples primeiro
+    const testQuery = 'SELECT 1 as test';
+    await pool.query(testQuery);
+    console.log('Conexão com banco estabelecida');
+
     // Total de leads
     const totalLeadsQuery = 'SELECT COUNT(*) as total FROM leads';
     const totalLeadsResult = await pool.query(totalLeadsQuery);
@@ -32,9 +38,9 @@ export async function GET(request: NextRequest) {
 
     // Valor total das vendas
     const totalValueQuery = `
-      SELECT SUM(valor_estimado) as total_value
+      SELECT SUM(valor_venda_com_iva) as total_value
       FROM leads 
-      WHERE status = 'vendido'
+      WHERE status = 'Ganho'
     `;
     const totalValueResult = await pool.query(totalValueQuery);
     const totalValue = parseFloat(totalValueResult.rows[0].total_value) || 0;
@@ -42,7 +48,7 @@ export async function GET(request: NextRequest) {
     // Taxa de conversão
     const conversionQuery = `
       SELECT 
-        COUNT(CASE WHEN status = 'vendido' THEN 1 END) as vendidos,
+        COUNT(CASE WHEN status = 'Ganho' THEN 1 END) as vendidos,
         COUNT(*) as total
       FROM leads
     `;
@@ -52,10 +58,10 @@ export async function GET(request: NextRequest) {
 
     // Leads criados nos últimos 30 dias
     const recentLeadsQuery = `
-      SELECT DATE(created_at) as date, COUNT(*) as count
+      SELECT DATE(data_entrada) as date, COUNT(*) as count
       FROM leads 
-      WHERE created_at >= NOW() - INTERVAL '30 days'
-      GROUP BY DATE(created_at)
+      WHERE data_entrada >= NOW() - INTERVAL '30 days'
+      GROUP BY DATE(data_entrada)
       ORDER BY date DESC
     `;
     const recentLeadsResult = await pool.query(recentLeadsQuery);
