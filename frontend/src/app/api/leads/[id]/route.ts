@@ -1,15 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { Pool } from 'pg';
-
-const pool = new Pool({
-  connectionString: process.env.DATABASE_URL,
-  ssl: {
-    rejectUnauthorized: false
-  },
-  connectionTimeoutMillis: 5000,
-  idleTimeoutMillis: 10000,
-  max: 10
-});
+import { executeQuery } from '../../../../lib/db';
 
 export async function GET(
   request: NextRequest,
@@ -39,7 +29,7 @@ export async function GET(
         ativo
       FROM leads WHERE id = $1
     `;
-    const result = await pool.query(query, [id]);
+    const result = await executeQuery(query, [id]);
 
     if (result.rows.length === 0) {
       return NextResponse.json(
@@ -102,7 +92,7 @@ export async function PUT(
       observacoes, valor_estimado, status, id
     ];
 
-    const result = await pool.query(query, values);
+    const result = await executeQuery(query, values);
 
     if (result.rows.length === 0) {
       return NextResponse.json(
@@ -130,7 +120,7 @@ export async function DELETE(
     const { id } = params;
 
     const query = 'DELETE FROM leads WHERE id = $1 RETURNING *';
-    const result = await pool.query(query, [id]);
+    const result = await executeQuery(query, [id]);
 
     if (result.rows.length === 0) {
       return NextResponse.json(

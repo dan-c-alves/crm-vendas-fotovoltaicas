@@ -1,16 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { Pool } from 'pg';
-
-// Configuração do banco de dados
-const pool = new Pool({
-  connectionString: process.env.DATABASE_URL,
-  ssl: {
-    rejectUnauthorized: false
-  },
-  connectionTimeoutMillis: 10000,
-  idleTimeoutMillis: 30000,
-  max: 5
-});
+import { getPool, executeQuery } from '../../../lib/db';
 
 export async function GET(request: NextRequest) {
   try {
@@ -18,7 +7,7 @@ export async function GET(request: NextRequest) {
     console.log('DATABASE_URL disponível:', !!process.env.DATABASE_URL);
 
     // Teste de conexão
-    await pool.query('SELECT 1');
+    await executeQuery('SELECT 1');
     console.log('Conexão com banco OK');
     const { searchParams } = new URL(request.url);
     const page = parseInt(searchParams.get('page') || '1');
@@ -46,7 +35,7 @@ export async function GET(request: NextRequest) {
 
     // Query para contar total
     const countQuery = `SELECT COUNT(*) FROM leads ${whereClause}`;
-    const countResult = await pool.query(countQuery, params);
+    const countResult = await executeQuery(countQuery, params);
     const total = parseInt(countResult.rows[0].count);
 
     // Query para buscar leads
@@ -76,7 +65,7 @@ export async function GET(request: NextRequest) {
       LIMIT $${paramCount + 1} OFFSET $${paramCount + 2}
     `;
     
-    const result = await pool.query(query, params);
+    const result = await executeQuery(query, params);
 
     return NextResponse.json({
       data: result.rows,
@@ -139,7 +128,7 @@ export async function POST(request: NextRequest) {
       observacoes, valor_estimado, status
     ];
 
-    const result = await pool.query(query, values);
+    const result = await executeQuery(query, values);
 
     return NextResponse.json(result.rows[0], { status: 201 });
 

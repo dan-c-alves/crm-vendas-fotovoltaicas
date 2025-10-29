@@ -1,16 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { Pool } from 'pg';
-
-// Configuração mais robusta do pool
-const pool = new Pool({
-  connectionString: process.env.DATABASE_URL,
-  ssl: {
-    rejectUnauthorized: false
-  },
-  connectionTimeoutMillis: 10000,
-  idleTimeoutMillis: 30000,
-  max: 5
-});
+import { getPool, executeQuery } from '../../../../../lib/db';
 
 export async function GET(request: NextRequest) {
   try {
@@ -19,12 +8,12 @@ export async function GET(request: NextRequest) {
     
     // Teste de conexão simples primeiro
     const testQuery = 'SELECT 1 as test';
-    await pool.query(testQuery);
+    await executeQuery(testQuery);
     console.log('Conexão com banco estabelecida');
 
     // Total de leads
     const totalLeadsQuery = 'SELECT COUNT(*) as total FROM leads';
-    const totalLeadsResult = await pool.query(totalLeadsQuery);
+    const totalLeadsResult = await executeQuery(totalLeadsQuery);
     const totalLeads = parseInt(totalLeadsResult.rows[0].total);
 
     // Leads por status
@@ -33,7 +22,7 @@ export async function GET(request: NextRequest) {
       FROM leads 
       GROUP BY status
     `;
-    const statusResult = await pool.query(statusQuery);
+    const statusResult = await executeQuery(statusQuery);
     const leadsByStatus = statusResult.rows;
 
     // Valor total das vendas
@@ -42,7 +31,7 @@ export async function GET(request: NextRequest) {
       FROM leads 
       WHERE status = 'Ganho'
     `;
-    const totalValueResult = await pool.query(totalValueQuery);
+    const totalValueResult = await executeQuery(totalValueQuery);
     const totalValue = parseFloat(totalValueResult.rows[0].total_value) || 0;
 
     // Taxa de conversão
@@ -52,7 +41,7 @@ export async function GET(request: NextRequest) {
         COUNT(*) as total
       FROM leads
     `;
-    const conversionResult = await pool.query(conversionQuery);
+    const conversionResult = await executeQuery(conversionQuery);
     const { vendidos, total } = conversionResult.rows[0];
     const conversionRate = total > 0 ? (vendidos / total) * 100 : 0;
 
@@ -64,7 +53,7 @@ export async function GET(request: NextRequest) {
       GROUP BY DATE(data_entrada)
       ORDER BY date DESC
     `;
-    const recentLeadsResult = await pool.query(recentLeadsQuery);
+    const recentLeadsResult = await executeQuery(recentLeadsQuery);
 
     return NextResponse.json({
       totalLeads,
