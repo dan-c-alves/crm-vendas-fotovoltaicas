@@ -146,7 +146,7 @@ export default function TarefasPage() {
     if (confirm(`Remover agendamento do lead "${leadName}"? O lead voltará ao seu status original.`)) {
       try {
         const response = await apiClient.updateLead(taskId, {
-          proxima_acao: null
+          proxima_acao: ''
         });
 
         toast.success('Data removida! Lead voltou ao status original.');
