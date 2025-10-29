@@ -1,0 +1,49 @@
+.
+|-- ESTRUTURA_COMPLETA.md
+|-- FICHEIROS_CRIADOS.md
+|-- README.md
+|-- TREE.txt
+|-- backend
+|   |-- app
+|   |   |-- __init__.py
+|   |   |-- database.py
+|   |   `-- schemas.py
+|   |-- config
+|   |   |-- __init__.py
+|   |   `-- settings.py
+|   |-- main.py
+|   |-- migrations
+|   |-- models
+|   |   |-- __init__.py
+|   |   `-- lead.py
+|   |-- requirements.txt
+|   |-- routes
+|   |   |-- __init__.py
+|   |   `-- leads.py
+|   |-- scripts
+|   |   |-- __init__.py
+|   |   `-- migrate_data.py
+|   `-- utils
+|       |-- __init__.py
+|       `-- calculators.py
+|-- docs
+|   |-- API.md
+|   |-- INSTALACAO_RAPIDA.md
+|   `-- MIGRACAO_DADOS.md
+`-- frontend
+    |-- next.config.js
+    |-- package.json
+    |-- postcss.config.js
+    |-- public
+    |-- src
+    |   |-- app
+    |   |-- components
+    |   |-- context
+    |   |-- hooks
+    |   |-- pages
+    |   |-- styles
+    |   `-- utils
+    |-- tailwind.config.js
+    `-- tsconfig.json
+
+19 directories, 27 files

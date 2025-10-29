@@ -1,0 +1,13 @@
+fastapi
+uvicorn
+sqlalchemy
+pydantic
+python-multipart
+
+# Dependências para Google Calendar
+google-api-python-client
+google-auth-oauthlib
+google-auth-httplib2
+
+# Dependências para Cloudinary
+cloudinary

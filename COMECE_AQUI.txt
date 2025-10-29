@@ -1,0 +1,174 @@
+╔════════════════════════════════════════════════════════════════════════════╗
+║                                                                            ║
+║          CRM VENDAS FOTOVOLTAICAS - SISTEMA INOVADOR                      ║
+║                                                                            ║
+║              Bem-vindo! Siga os passos abaixo para começar                ║
+║                                                                            ║
+╚════════════════════════════════════════════════════════════════════════════╝
+
+📋 REQUISITOS ANTES DE COMEÇAR
+═══════════════════════════════════════════════════════════════════════════
+
+1. Python 3.9+ instalado
+   - Download: https://www.python.org/downloads/
+   - Marque "Add Python to PATH" durante a instalação
+
+2. Node.js 18+ instalado
+   - Download: https://nodejs.org/
+   - Instale a versão LTS (Long Term Support)
+
+3. VS Code (opcional, mas recomendado)
+   - Download: https://code.visualstudio.com/
+
+
+🚀 INICIAR O CRM
+═══════════════════════════════════════════════════════════════════════════
+
+OPÇÃO 1: Iniciar Automático (RECOMENDADO)
+──────────────────────────────────────────
+
+Windows 11 Pro:
+  1. Duplo clique em: INICIAR.bat
+  2. Aguarde a inicialização (pode levar 1-2 minutos)
+  3. Abra o navegador em: http://localhost:3000
+
+macOS/Linux:
+  1. Abra o terminal
+  2. Execute: ./INICIAR.sh
+  3. Abra o navegador em: http://localhost:3000
+
+
+OPÇÃO 2: Iniciar Manual
+──────────────────────────
+
+Backend (Terminal 1):
+  1. cd backend
+  2. python -m venv venv
+  3. venv\Scripts\activate  (Windows) ou source venv/bin/activate (Mac/Linux)
+  4. pip install -r requirements.txt
+  5. python main.py
+  
+  ✓ Backend em: http://localhost:8000
+
+Frontend (Terminal 2):
+  1. cd frontend
+  2. npm install
+  3. npm run dev
+  
+  ✓ Frontend em: http://localhost:3000
+
+
+🌐 ACESSAR O CRM
+═══════════════════════════════════════════════════════════════════════════
+
+Local (seu computador):
+  - Dashboard: http://localhost:3000
+  - API: http://localhost:8000
+  - Docs API: http://localhost:8000/docs
+
+Telemóvel (mesma rede):
+  - Dashboard: http://192.168.1.185:3000
+  (Substitua 192.168.1.185 pelo IP do seu computador)
+
+
+📊 FUNCIONALIDADES PRINCIPAIS
+═══════════════════════════════════════════════════════════════════════════
+
+✓ Dashboard com métricas em tempo real
+✓ Gestão completa de leads
+✓ Gestão de vendas e comissões
+✓ Sistema de metas com gamificação
+✓ Gráficos interativos (funil, tendências)
+✓ Calculadora de comissões automática
+✓ Design moderno (Glassmorphism + Dark Mode)
+✓ Responsivo (desktop e telemóvel)
+
+
+💾 MIGRAR DADOS ANTIGOS
+═══════════════════════════════════════════════════════════════════════════
+
+Se tem dados antigos (104 leads, 16 vendas):
+
+  1. Copie o ficheiro crm_database.db para: data/
+  2. No terminal, execute:
+     cd backend
+     python scripts/migrate_data.py
+  
+  ✓ Dados migrados automaticamente!
+
+
+📁 ESTRUTURA DE PASTAS
+═══════════════════════════════════════════════════════════════════════════
+
+crm-vendas-fotovoltaicas/
+├── backend/              # API Python (FastAPI)
+├── frontend/             # Interface (Next.js/React)
+├── data/                 # Base de dados (criada automaticamente)
+├── docs/                 # Documentação
+├── INICIAR.bat          # Script de inicialização (Windows)
+├── INICIAR.sh           # Script de inicialização (Mac/Linux)
+├── README.md            # Documentação completa
+└── COMECE_AQUI.txt      # Este ficheiro
+
+
+❓ DÚVIDAS FREQUENTES
+═══════════════════════════════════════════════════════════════════════════
+
+P: Erro "Port already in use"
+R: A porta já está em uso. Feche outros programas ou altere a porta.
+
+P: Erro "ModuleNotFoundError"
+R: Certifique-se que o ambiente virtual está ativado.
+
+P: Erro "CORS error"
+R: Verifique se o backend está em execução em http://localhost:8000
+
+P: Como aceder no telemóvel?
+R: Use o IP do seu computador. Ex: http://192.168.1.185:3000
+
+P: Como mudar a percentagem de comissão?
+R: Edite: backend/config/settings.py (COMISSAO_PERCENTAGEM)
+
+
+📚 DOCUMENTAÇÃO
+═══════════════════════════════════════════════════════════════════════════
+
+- README.md                    - Documentação principal
+- docs/INSTALACAO_RAPIDA.md   - Guia rápido
+- docs/API.md                 - Endpoints da API
+- docs/MIGRACAO_DADOS.md      - Migração de dados
+- ESTRUTURA_COMPLETA.md       - Estrutura do projeto
+- FICHEIROS_CRIADOS.md        - Lista de ficheiros
+
+
+🎯 PRÓXIMOS PASSOS
+═══════════════════════════════════════════════════════════════════════════
+
+1. ✓ Estrutura criada
+2. → Iniciar o CRM (veja acima)
+3. → Migrar dados antigos (opcional)
+4. → Explorar o dashboard
+5. → Personalizar configurações
+
+
+🆘 SUPORTE
+═══════════════════════════════════════════════════════════════════════════
+
+Se encontrar problemas:
+
+1. Consulte a documentação em README.md
+2. Verifique se Python e Node.js estão instalados
+3. Certifique-se que as portas 3000 e 8000 estão livres
+4. Tente fechar e reabrir os terminais
+
+
+═══════════════════════════════════════════════════════════════════════════
+
+Versão: 1.0.0
+Status: ✅ Pronto para usar
+Última atualização: Outubro 2025
+
+═══════════════════════════════════════════════════════════════════════════
+
+Aproveite o seu novo CRM! 🚀☀️
+

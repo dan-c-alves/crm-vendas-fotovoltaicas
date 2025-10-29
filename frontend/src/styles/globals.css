@@ -1,0 +1,246 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Variáveis CSS para tema */
+:root {
+  --color-primary: #22c55e;
+  --color-primary-dark: #16a34a;
+  --color-bg-dark: #111827;
+  --color-bg-darker: #0f172a;
+  --color-text-light: #f3f4f6;
+  --color-text-muted: #9ca3af;
+  --color-glass-light: rgba(255, 255, 255, 0.1);
+  --color-glass-medium: rgba(255, 255, 255, 0.15);
+  --color-border: rgba(255, 255, 255, 0.1);
+}
+
+/* Dark mode por padrão */
+* {
+  @apply dark:bg-dark-900;
+}
+
+html, body {
+  @apply bg-dark-900 text-dark-50 font-sans;
+  background: linear-gradient(135deg, #0f172a 0%, #1a1f3a 50%, #0f172a 100%);
+  min-height: 100vh;
+}
+
+/* Glassmorphism base */
+.glass {
+  @apply backdrop-blur-md bg-glass-medium border border-glass-light rounded-lg;
+}
+
+.glass-sm {
+  @apply backdrop-blur-sm bg-glass-light border border-glass-light rounded-md;
+}
+
+.glass-lg {
+  @apply backdrop-blur-lg bg-glass-medium border border-glass-light rounded-xl;
+}
+
+/* Scrollbar customizado */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(34, 197, 94, 0.5);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(34, 197, 94, 0.7);
+}
+
+/* Animações */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes slideInRight {
+  from {
+    opacity: 0;
+    transform: translateX(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes pulse-glow {
+  0%, 100% {
+    box-shadow: 0 0 10px rgba(34, 197, 94, 0.3);
+  }
+  50% {
+    box-shadow: 0 0 20px rgba(34, 197, 94, 0.6);
+  }
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.3s ease-in-out;
+}
+
+.animate-slide-in {
+  animation: slideInRight 0.3s ease-in-out;
+}
+
+.animate-pulse-glow {
+  animation: pulse-glow 2s ease-in-out infinite;
+}
+
+/* Botões */
+.btn {
+  @apply px-4 py-2 rounded-lg font-medium transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2;
+}
+
+.btn-primary {
+  @apply bg-primary-500 hover:bg-primary-600 text-white;
+}
+
+.btn-secondary {
+  @apply bg-dark-700 hover:bg-dark-600 text-dark-50 border border-dark-500;
+}
+
+.btn-ghost {
+  @apply bg-transparent hover:bg-glass-light text-dark-50 border border-glass-light;
+}
+
+.btn-sm {
+  @apply px-3 py-1 text-sm;
+}
+
+.btn-lg {
+  @apply px-6 py-3 text-lg;
+}
+
+/* Cards */
+.card {
+  @apply glass p-6 hover:bg-glass-medium transition-all duration-200;
+}
+
+.card-sm {
+  @apply glass p-4;
+}
+
+.card-lg {
+  @apply glass p-8;
+}
+
+/* Inputs */
+.input {
+  @apply w-full px-4 py-2 rounded-lg bg-dark-800 border border-dark-600 text-dark-50 placeholder-dark-400 focus:outline-none focus:border-primary-500 focus:ring-1 focus:ring-primary-500 transition-all duration-200;
+}
+
+.input:disabled {
+  @apply opacity-50 cursor-not-allowed;
+}
+
+/* Labels */
+.label {
+  @apply block text-sm font-medium text-dark-300 mb-2;
+}
+
+/* Badges */
+.badge {
+  @apply inline-flex items-center px-3 py-1 rounded-full text-sm font-medium;
+}
+
+.badge-primary {
+  @apply bg-primary-500/20 text-primary-300;
+}
+
+.badge-success {
+  @apply bg-green-500/20 text-green-300;
+}
+
+.badge-warning {
+  @apply bg-yellow-500/20 text-yellow-300;
+}
+
+.badge-danger {
+  @apply bg-red-500/20 text-red-300;
+}
+
+.badge-info {
+  @apply bg-blue-500/20 text-blue-300;
+}
+
+/* Tabelas */
+.table {
+  @apply w-full border-collapse;
+}
+
+.table th {
+  @apply bg-dark-800 text-dark-300 font-semibold text-left px-4 py-3 border-b border-dark-700;
+}
+
+.table td {
+  @apply px-4 py-3 border-b border-dark-700;
+}
+
+.table tbody tr:hover {
+  @apply bg-dark-800/50;
+}
+
+/* Modais */
+.modal-overlay {
+  @apply fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50;
+}
+
+.modal {
+  @apply glass-lg max-w-md w-full mx-4 animate-fade-in;
+}
+
+/* Notificações */
+.toast {
+  @apply glass-lg px-6 py-4 rounded-lg shadow-lg animate-slide-in;
+}
+
+.toast-success {
+  @apply border-l-4 border-green-500;
+}
+
+.toast-error {
+  @apply border-l-4 border-red-500;
+}
+
+.toast-warning {
+  @apply border-l-4 border-yellow-500;
+}
+
+.toast-info {
+  @apply border-l-4 border-blue-500;
+}
+
+/* Gradientes */
+.gradient-primary {
+  @apply bg-gradient-to-r from-primary-500 to-primary-600;
+}
+
+.gradient-dark {
+  @apply bg-gradient-to-br from-dark-800 to-dark-900;
+}
+
+/* Sombras */
+.shadow-glow {
+  box-shadow: 0 0 20px rgba(34, 197, 94, 0.2);
+}
+
+.shadow-glow-lg {
+  box-shadow: 0 0 40px rgba(34, 197, 94, 0.3);
+}
+
