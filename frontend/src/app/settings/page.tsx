@@ -3,7 +3,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { Layout } from '@/components';
+import { Layout } from '../../components';
 import toast, { Toaster } from 'react-hot-toast';
 import { FiCalendar, FiCheckCircle, FiAlertTriangle } from 'react-icons/fi'; // NOVOS IMPORTS
 

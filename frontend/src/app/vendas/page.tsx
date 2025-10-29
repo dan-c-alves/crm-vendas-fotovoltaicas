@@ -1,9 +1,9 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
-import { Layout, LeadsTable, TrendChart, MetricCard } from '@/components';
-import { apiClient } from '@/utils/api';
-import { formatCurrency } from '@/utils/format';
+import React, { useState, useEffect } from 'react';
+import { Layout, LeadsTable, TrendChart, MetricCard } from '../../components';
+import { apiClient } from '../../utils/api';
+import { formatCurrency } from '../../utils/format';
 import { FiTrendingUp, FiDollarSign, FiAward } from 'react-icons/fi';
 import toast, { Toaster } from 'react-hot-toast';
 

@@ -3,8 +3,8 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { Layout } from '@/components';
-import { apiClient } from '@/utils/api';
+import { Layout } from '../../../components';
+import { apiClient } from '../../../utils/api';
 import { FiUpload, FiCalendar, FiSave, FiXCircle, FiArrowLeft } from 'react-icons/fi';
 import toast, { Toaster } from 'react-hot-toast';
 import { useRouter } from 'next/navigation';

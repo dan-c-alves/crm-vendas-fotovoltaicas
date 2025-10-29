@@ -2,9 +2,9 @@
 
 import React, { useState, useEffect } from 'react';
 import { FiClock, FiRefreshCw, FiCheck, FiCalendar, FiEdit, FiTrash2, FiX } from 'react-icons/fi';
-import { Layout, LeadModal } from '@/components';
-import { apiClient } from '@/utils/api';
-import { formatCurrency, formatDateTime } from '@/utils/format';
+import { Layout, LeadModal } from '../../components';
+import { apiClient } from '../../utils/api';
+import { formatCurrency, formatDateTime } from '../../utils/format';
 import toast from 'react-hot-toast';
 
 interface TaskItem {

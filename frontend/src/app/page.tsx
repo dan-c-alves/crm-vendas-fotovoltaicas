@@ -1,9 +1,9 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import { Layout, MetricCard, FunnelChart, TrendChart } from '@/components';
-import { apiClient } from '@/utils/api';
-import { formatCurrency } from '@/utils/format';
+import { Layout, MetricCard, FunnelChart, TrendChart } from '../components';
+import { apiClient } from '../utils/api';
+import { formatCurrency } from '../utils/format';
 import { FiTrendingUp, FiUsers, FiDollarSign, FiAward } from 'react-icons/fi';
 import toast, { Toaster } from 'react-hot-toast';
 

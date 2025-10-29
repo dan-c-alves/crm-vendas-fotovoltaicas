@@ -1,8 +1,8 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { Layout, LeadsTable } from '@/components';
-import { apiClient } from '@/utils/api';
+import { Layout, LeadsTable } from '../../components';
+import { apiClient } from '../../utils/api';
 import { FiPlus, FiRefreshCw, FiSearch, FiFilter } from 'react-icons/fi';
 import { useRouter } from 'next/navigation';
 import toast, { Toaster } from 'react-hot-toast';
