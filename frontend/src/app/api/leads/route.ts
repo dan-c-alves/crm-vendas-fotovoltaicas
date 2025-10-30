@@ -1,93 +1,84 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { Pool } from 'pg';
 
-// Pool inline para evitar problemas de importação
-let pool: Pool | null = null;
+// Supabase REST API configuration
+const SUPABASE_URL = 'https://jzezbecvjquqxjnilvya.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imp6ZXpiZWN2anF1cXhqbmlsdnlhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzAxNTE2MjcsImV4cCI6MjA0NTcyNzYyN30.M0LGSPNuOqBWXVBOxQHf5WfJQnOZaIgUf-KlCATYPwc';
 
-function getPool(): Pool {
-  if (!pool) {
-    pool = new Pool({
-      connectionString: process.env.DATABASE_URL,
-      ssl: process.env.NODE_ENV === 'production' ? {
-        rejectUnauthorized: false
-      } : false,
-      connectionTimeoutMillis: 60000,
-      idleTimeoutMillis: 600000,
-      max: 1,
-      allowExitOnIdle: true
-    });
+async function supabaseRequest(endpoint: string, options: RequestInit = {}) {
+  const url = `${SUPABASE_URL}/rest/v1/${endpoint}`;
+  const headers = {
+    'apikey': SUPABASE_ANON_KEY,
+    'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+    'Content-Type': 'application/json',
+    'Prefer': 'return=representation',
+    ...options.headers
+  };
+
+  const response = await fetch(url, { ...options, headers });
+  
+  if (!response.ok) {
+    throw new Error(`Supabase error: ${response.statusText}`);
   }
-  return pool;
+  
+  return response.json();
 }
 
 export async function GET(request: NextRequest) {
   try {
     console.log('API leads GET chamada');
-    console.log('DATABASE_URL disponível:', !!process.env.DATABASE_URL);
 
-    // Teste de conexão
-    await getPool().query('SELECT 1');
-    console.log('Conexão com banco OK');
     const { searchParams } = new URL(request.url);
     const page = parseInt(searchParams.get('page') || '1');
     const limit = parseInt(searchParams.get('limit') || '10');
     const search = searchParams.get('search') || '';
     const status = searchParams.get('status') || '';
 
-    const offset = (page - 1) * limit;
-
-    let whereClause = 'WHERE 1=1';
-    const params: any[] = [];
-    let paramCount = 0;
-
-    if (search) {
-      paramCount++;
-      whereClause += ` AND (nome_lead ILIKE $${paramCount} OR email ILIKE $${paramCount} OR telefone ILIKE $${paramCount})`;
-      params.push(`%${search}%`);
-    }
-
-    if (status) {
-      paramCount++;
-      whereClause += ` AND status = $${paramCount}`;
-      params.push(status);
-    }
-
-    // Query para contar total
-    const countQuery = `SELECT COUNT(*) FROM leads ${whereClause}`;
-    const countResult = await getPool().query(countQuery, params);
-    const total = parseInt(countResult.rows[0].count);
-
-    // Query para buscar leads
-    params.push(limit, offset);
-    const query = `
-      SELECT 
-        id,
-        nome_lead as nome,
-        email,
-        telefone,
-        morada as endereco,
-        status,
-        valor_venda_com_iva as valor_estimado,
-        valor_proposta,
-        comissao_valor,
-        notas_conversa as observacoes,
-        data_entrada as created_at,
-        data_atualizacao as updated_at,
-        proxima_acao,
-        url_imagem_cliente,
-        origem,
-        tags,
-        ativo
-      FROM leads 
-      ${whereClause}
-      ORDER BY data_entrada DESC 
-      LIMIT $${paramCount + 1} OFFSET $${paramCount + 2}
-    `;
+    // Construir query para Supabase
+    let query = 'leads?select=*';
     
-    const result = await getPool().query(query, params);
+    // Filtros
+    const filters = [];
+    if (search) {
+      filters.push(`or=(nome_lead.ilike.*${search}*,email.ilike.*${search}*,telefone.ilike.*${search}*)`);
+    }
+    if (status) {
+      filters.push(`status.eq.${status}`);
+    }
+
+    if (filters.length > 0) {
+      query += `&${filters.join('&')}`;
+    }
+
+    // Paginação
+    const offset = (page - 1) * limit;
+    query += `&limit=${limit}&offset=${offset}&order=data_entrada.desc`;
+
+    // Count total
+    let countQuery = 'leads?select=count';
+    if (filters.length > 0) {
+      countQuery += `&${filters.join('&')}`;
+    }
+
+    // Fazer requisições
+    const [countResult, dataResult] = await Promise.all([
+      supabaseRequest(countQuery, { headers: { 'Prefer': 'count=exact' } }),
+      supabaseRequest(query)
+    ]);
+
+    const total = countResult.length || 0;
 
     return NextResponse.json({
-      data: result.rows,
+      data: dataResult.map((lead: any) => ({
+        id: lead.id,
+        nome: lead.nome_lead,
+        email: lead.email,
+        telefone: lead.telefone,
+        endereco: lead.morada,
+        status: lead.status,
+        valor_estimado: lead.valor_venda_com_iva,
+        created_at: lead.data_entrada,
+        updated_at: lead.data_atualizacao
+      })),
       total,
       page,
       totalPages: Math.ceil(total / limit)
@@ -125,31 +116,35 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const query = `
-      INSERT INTO leads (
-        nome_lead, email, telefone, morada, origem, interesse, 
-        notas_conversa, valor_venda_com_iva, status, data_entrada, data_atualizacao
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, NOW(), NOW())
-      RETURNING 
-        id,
-        nome_lead as nome,
-        email,
-        telefone,
-        morada as endereco,
-        status,
-        valor_venda_com_iva as valor_estimado,
-        data_entrada as created_at,
-        data_atualizacao as updated_at
-    `;
+    // Dados para Supabase
+    const leadData = {
+      nome_lead: nome,
+      email,
+      telefone,
+      morada: endereco,
+      origem: fonte,
+      interesse,
+      notas_conversa: observacoes,
+      valor_venda_com_iva: valor_estimado,
+      status,
+      data_entrada: new Date().toISOString(),
+      data_atualizacao: new Date().toISOString()
+    };
 
-    const values = [
-      nome, email, telefone, endereco, fonte, interesse,
-      observacoes, valor_estimado, status
-    ];
+    const result = await supabaseRequest('leads', {
+      method: 'POST',
+      body: JSON.stringify(leadData)
+    });
 
-    const result = await getPool().query(query, values);
-
-    return NextResponse.json(result.rows[0], { status: 201 });
+    return NextResponse.json({
+      id: result[0].id,
+      nome: result[0].nome_lead,
+      email: result[0].email,
+      telefone: result[0].telefone,
+      endereco: result[0].morada,
+      status: result[0].status,
+      created_at: result[0].data_entrada
+    }, { status: 201 });
 
   } catch (error) {
     console.error('Erro ao criar lead:', error);

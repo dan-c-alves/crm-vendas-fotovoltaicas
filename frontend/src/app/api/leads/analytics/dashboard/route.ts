@@ -1,85 +1,82 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { Pool } from 'pg';
 
-// Pool inline para evitar problemas de importação
-let pool: Pool | null = null;
+// Supabase REST API configuration
+const SUPABASE_URL = 'https://jzezbecvjquqxjnilvya.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imp6ZXpiZWN2anF1cXhqbmlsdnlhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzAxNTE2MjcsImV4cCI6MjA0NTcyNzYyN30.M0LGSPNuOqBWXVBOxQHf5WfJQnOZaIgUf-KlCATYPwc';
 
-function getPool(): Pool {
-  if (!pool) {
-    pool = new Pool({
-      connectionString: process.env.DATABASE_URL,
-      ssl: process.env.NODE_ENV === 'production' ? {
-        rejectUnauthorized: false
-      } : false,
-      connectionTimeoutMillis: 60000,
-      idleTimeoutMillis: 600000,
-      max: 1,
-      allowExitOnIdle: true
-    });
+async function supabaseRequest(endpoint: string, options: RequestInit = {}) {
+  const url = `${SUPABASE_URL}/rest/v1/${endpoint}`;
+  const headers = {
+    'apikey': SUPABASE_ANON_KEY,
+    'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+    'Content-Type': 'application/json',
+    'Prefer': 'return=representation',
+    ...options.headers,
+  };
+
+  const response = await fetch(url, {
+    ...options,
+    headers,
+  });
+
+  if (!response.ok) {
+    throw new Error(`Supabase request failed: ${response.status} ${response.statusText}`);
   }
-  return pool;
+
+  return response.json();
 }
 
 export async function GET(request: NextRequest) {
   try {
-    // Log para debug
-    console.log('DATABASE_URL disponível:', !!process.env.DATABASE_URL);
-    
-    // Teste de conexão simples primeiro
-    const testQuery = 'SELECT 1 as test';
-    await getPool().query(testQuery);
-    console.log('Conexão com banco estabelecida');
+    // Buscar todos os leads para fazer os cálculos
+    const allLeads = await supabaseRequest('leads?select=*');
 
     // Total de leads
-    const totalLeadsQuery = 'SELECT COUNT(*) as total FROM leads';
-    const totalLeadsResult = await getPool().query(totalLeadsQuery);
-    const totalLeads = parseInt(totalLeadsResult.rows[0].total);
+    const totalLeads = allLeads.length;
 
     // Leads por status
-    const statusQuery = `
-      SELECT status, COUNT(*) as count 
-      FROM leads 
-      GROUP BY status
-    `;
-    const statusResult = await getPool().query(statusQuery);
-    const leadsByStatus = statusResult.rows;
+    const statusCounts: { [key: string]: number } = {};
+    allLeads.forEach((lead: any) => {
+      statusCounts[lead.status] = (statusCounts[lead.status] || 0) + 1;
+    });
+    
+    const leadsByStatus = Object.entries(statusCounts).map(([status, count]) => ({
+      status,
+      count
+    }));
 
-    // Valor total das vendas
-    const totalValueQuery = `
-      SELECT SUM(valor_venda_com_iva) as total_value
-      FROM leads 
-      WHERE status = 'Ganho'
-    `;
-    const totalValueResult = await getPool().query(totalValueQuery);
-    const totalValue = parseFloat(totalValueResult.rows[0].total_value) || 0;
+    // Valor total das vendas (apenas leads com status "Ganho")
+    const totalValue = allLeads
+      .filter((lead: any) => lead.status === 'Ganho')
+      .reduce((sum: number, lead: any) => sum + (parseFloat(lead.valor_venda_com_iva) || 0), 0);
 
     // Taxa de conversão
-    const conversionQuery = `
-      SELECT 
-        COUNT(CASE WHEN status = 'Ganho' THEN 1 END) as vendidos,
-        COUNT(*) as total
-      FROM leads
-    `;
-    const conversionResult = await getPool().query(conversionQuery);
-    const { vendidos, total } = conversionResult.rows[0];
-    const conversionRate = total > 0 ? (vendidos / total) * 100 : 0;
+    const vendidos = allLeads.filter((lead: any) => lead.status === 'Ganho').length;
+    const conversionRate = totalLeads > 0 ? (vendidos / totalLeads) * 100 : 0;
 
     // Leads criados nos últimos 30 dias
-    const recentLeadsQuery = `
-      SELECT DATE(data_entrada) as date, COUNT(*) as count
-      FROM leads 
-      WHERE data_entrada >= NOW() - INTERVAL '30 days'
-      GROUP BY DATE(data_entrada)
-      ORDER BY date DESC
-    `;
-    const recentLeadsResult = await getPool().query(recentLeadsQuery);
+    const thirtyDaysAgo = new Date();
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+    
+    const recentLeadsData: { [key: string]: number } = {};
+    allLeads.forEach((lead: any) => {
+      const leadDate = new Date(lead.data_entrada);
+      if (leadDate >= thirtyDaysAgo) {
+        const dateStr = leadDate.toISOString().split('T')[0];
+        recentLeadsData[dateStr] = (recentLeadsData[dateStr] || 0) + 1;
+      }
+    });
+
+    const recentLeads = Object.entries(recentLeadsData)
+      .map(([date, count]) => ({ date, count }))
+      .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 
     return NextResponse.json({
       totalLeads,
       leadsByStatus,
       totalValue,
       conversionRate: parseFloat(conversionRate.toFixed(2)),
-      recentLeads: recentLeadsResult.rows
+      recentLeads
     });
 
   } catch (error) {

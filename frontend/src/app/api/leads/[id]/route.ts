@@ -1,23 +1,29 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { Pool } from 'pg';
 
-// Pool inline para evitar problemas de importação
-let pool: Pool | null = null;
+// Supabase REST API configuration
+const SUPABASE_URL = 'https://jzezbecvjquqxjnilvya.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imp6ZXpiZWN2anF1cXhqbmlsdnlhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzAxNTE2MjcsImV4cCI6MjA0NTcyNzYyN30.M0LGSPNuOqBWXVBOxQHf5WfJQnOZaIgUf-KlCATYPwc';
 
-function getPool(): Pool {
-  if (!pool) {
-    pool = new Pool({
-      connectionString: process.env.DATABASE_URL,
-      ssl: process.env.NODE_ENV === 'production' ? {
-        rejectUnauthorized: false
-      } : false,
-      connectionTimeoutMillis: 60000,
-      idleTimeoutMillis: 600000,
-      max: 1,
-      allowExitOnIdle: true
-    });
+async function supabaseRequest(endpoint: string, options: RequestInit = {}) {
+  const url = `${SUPABASE_URL}/rest/v1/${endpoint}`;
+  const headers = {
+    'apikey': SUPABASE_ANON_KEY,
+    'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+    'Content-Type': 'application/json',
+    'Prefer': 'return=representation',
+    ...options.headers,
+  };
+
+  const response = await fetch(url, {
+    ...options,
+    headers,
+  });
+
+  if (!response.ok) {
+    throw new Error(`Supabase request failed: ${response.status} ${response.statusText}`);
   }
-  return pool;
+
+  return response.json();
 }
 
 export async function GET(
@@ -27,37 +33,39 @@ export async function GET(
   try {
     const { id } = params;
 
-    const query = `
-      SELECT 
-        id,
-        nome_lead as nome,
-        email,
-        telefone,
-        morada as endereco,
-        status,
-        valor_venda_com_iva as valor_estimado,
-        valor_proposta,
-        comissao_valor,
-        notas_conversa as observacoes,
-        data_entrada as created_at,
-        data_atualizacao as updated_at,
-        proxima_acao,
-        url_imagem_cliente,
-        origem,
-        tags,
-        ativo
-      FROM leads WHERE id = $1
-    `;
-    const result = await getPool().query(query, [id]);
+    const result = await supabaseRequest(`leads?id=eq.${id}&select=*`);
 
-    if (result.rows.length === 0) {
+    if (result.length === 0) {
       return NextResponse.json(
         { error: 'Lead não encontrado' },
         { status: 404 }
       );
     }
 
-    return NextResponse.json(result.rows[0]);
+    const lead = result[0];
+    
+    // Mapear campos do banco para a estrutura esperada
+    const mappedLead = {
+      id: lead.id,
+      nome: lead.nome_lead,
+      email: lead.email,
+      telefone: lead.telefone,
+      endereco: lead.morada,
+      status: lead.status,
+      valor_estimado: lead.valor_venda_com_iva,
+      valor_proposta: lead.valor_proposta,
+      comissao_valor: lead.comissao_valor,
+      observacoes: lead.notas_conversa,
+      created_at: lead.data_entrada,
+      updated_at: lead.data_atualizacao,
+      proxima_acao: lead.proxima_acao,
+      url_imagem_cliente: lead.url_imagem_cliente,
+      origem: lead.origem,
+      tags: lead.tags,
+      ativo: lead.ativo
+    };
+
+    return NextResponse.json(mappedLead);
 
   } catch (error) {
     console.error('Erro ao buscar lead:', error);
@@ -88,39 +96,48 @@ export async function PUT(
       status
     } = body;
 
-    const query = `
-      UPDATE leads SET 
-        nome_lead = $1, email = $2, telefone = $3, morada = $4,
-        origem = $5, interesse = $6, notas_conversa = $7,
-        valor_venda_com_iva = $8, status = $9, data_atualizacao = NOW()
-      WHERE id = $10
-      RETURNING 
-        id,
-        nome_lead as nome,
-        email,
-        telefone,
-        morada as endereco,
-        status,
-        valor_venda_com_iva as valor_estimado,
-        data_entrada as created_at,
-        data_atualizacao as updated_at
-    `;
+    // Dados para atualizar no Supabase
+    const updateData = {
+      nome_lead: nome,
+      email,
+      telefone,
+      morada: endereco,
+      origem: fonte,
+      interesse,
+      notas_conversa: observacoes,
+      valor_venda_com_iva: valor_estimado,
+      status,
+      data_atualizacao: new Date().toISOString()
+    };
 
-    const values = [
-      nome, email, telefone, endereco, fonte, interesse,
-      observacoes, valor_estimado, status, id
-    ];
+    const result = await supabaseRequest(`leads?id=eq.${id}`, {
+      method: 'PATCH',
+      body: JSON.stringify(updateData)
+    });
 
-    const result = await getPool().query(query, values);
-
-    if (result.rows.length === 0) {
+    if (result.length === 0) {
       return NextResponse.json(
         { error: 'Lead não encontrado' },
         { status: 404 }
       );
     }
 
-    return NextResponse.json(result.rows[0]);
+    const updatedLead = result[0];
+    
+    // Mapear resposta para estrutura esperada
+    const mappedLead = {
+      id: updatedLead.id,
+      nome: updatedLead.nome_lead,
+      email: updatedLead.email,
+      telefone: updatedLead.telefone,
+      endereco: updatedLead.morada,
+      status: updatedLead.status,
+      valor_estimado: updatedLead.valor_venda_com_iva,
+      created_at: updatedLead.data_entrada,
+      updated_at: updatedLead.data_atualizacao
+    };
+
+    return NextResponse.json(mappedLead);
 
   } catch (error) {
     console.error('Erro ao atualizar lead:', error);
@@ -138,10 +155,11 @@ export async function DELETE(
   try {
     const { id } = params;
 
-    const query = 'DELETE FROM leads WHERE id = $1 RETURNING *';
-    const result = await getPool().query(query, [id]);
+    const result = await supabaseRequest(`leads?id=eq.${id}`, {
+      method: 'DELETE'
+    });
 
-    if (result.rows.length === 0) {
+    if (result.length === 0) {
       return NextResponse.json(
         { error: 'Lead não encontrado' },
         { status: 404 }
