@@ -14,7 +14,7 @@ dist/
 downloads/
 eggs/
 .eggs/
-lib/
+# lib/ (removido para permitir frontend/src/lib)
 lib64/
 parts/
 sdist/
@@ -72,3 +72,6 @@ build/
 temp/
 tmp/
 
+
+# Local Netlify folder
+.netlify
