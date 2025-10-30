@@ -10,7 +10,7 @@ export async function GET(request: NextRequest) {
       timestamp: new Date().toISOString(),
       env: {
         NODE_ENV: process.env.NODE_ENV,
-        hasDB: !!process.env.DATABASE_URL
+        hasSupabase: !!process.env.NEXT_PUBLIC_SUPABASE_URL
       }
     });
 
