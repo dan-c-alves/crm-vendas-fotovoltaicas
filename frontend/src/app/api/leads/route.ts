@@ -98,20 +98,26 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
+    console.log('📥 Dados recebidos no POST:', body);
+
     const {
-      nome,
+      nome_lead,
       email,
-      telefone,
-      endereco,
-      fonte,
+      telefone, 
+      morada,
+      origem,
       interesse,
-      observacoes,
-      valor_estimado,
+      notas_conversa,
+      valor_venda_com_iva,
+      valor_proposta,
+      taxa_iva,
+      comissao_percentagem,
       status = 'Entrada de Lead'
     } = body;
 
     // Validações básicas
-    if (!nome || !email || !telefone) {
+    if (!nome_lead || !email || !telefone) {
+      console.log('❌ Validação falhou:', { nome_lead, email, telefone });
       return NextResponse.json(
         { error: 'Nome, email e telefone são obrigatórios' },
         { status: 400 }
@@ -120,40 +126,52 @@ export async function POST(request: NextRequest) {
 
     // Dados para Supabase
     const leadData = {
-      nome_lead: nome,
+      nome_lead,
       email,
       telefone,
-      morada: endereco,
-      origem: fonte,
+      morada,
+      origem,
       interesse,
-      notas_conversa: observacoes,
-      valor_venda_com_iva: valor_estimado,
+      notas_conversa,
+      valor_venda_com_iva: valor_venda_com_iva ? Number(valor_venda_com_iva) : null,
+      valor_proposta: valor_proposta ? Number(valor_proposta) : null,
+      taxa_iva: taxa_iva ? Number(taxa_iva) : 0.23,
+      comissao_percentagem: comissao_percentagem ? Number(comissao_percentagem) : 0.05,
       status,
       data_entrada: new Date().toISOString(),
       data_atualizacao: new Date().toISOString()
     };
+
+    console.log('📤 Enviando para Supabase:', leadData);
 
     const response = await supabaseRequest('leads', {
       method: 'POST',
       body: JSON.stringify(leadData)
     });
 
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('❌ Erro Supabase:', errorText);
+      throw new Error(`Erro Supabase: ${response.status} - ${errorText}`);
+    }
+
     const result = await response.json();
+    console.log('✅ Resposta Supabase:', result);
 
     return NextResponse.json({
       id: result[0].id,
-      nome: result[0].nome_lead,
+      nome_lead: result[0].nome_lead,
       email: result[0].email,
       telefone: result[0].telefone,
-      endereco: result[0].morada,
+      morada: result[0].morada,
       status: result[0].status,
-      created_at: result[0].data_entrada
+      data_entrada: result[0].data_entrada
     }, { status: 201 });
 
   } catch (error) {
-    console.error('Erro ao criar lead:', error);
+    console.error('❌ Erro ao criar lead:', error);
     return NextResponse.json(
-      { error: 'Erro interno do servidor' },
+      { error: 'Erro interno do servidor', details: error instanceof Error ? error.message : 'Erro desconhecido' },
       { status: 500 }
     );
   }
