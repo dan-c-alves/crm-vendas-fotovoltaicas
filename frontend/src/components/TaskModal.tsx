@@ -107,7 +107,7 @@ export default function TaskModal({ isOpen, onClose, task, onUpdate }: TaskModal
           break;
       }
 
-      const response = await fetch(`http://localhost:8000/api/leads/${task.id}`, {
+      const response = await fetch(`/api/leads/${task.id}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',

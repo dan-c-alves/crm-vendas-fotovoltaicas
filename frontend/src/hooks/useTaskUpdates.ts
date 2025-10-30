@@ -21,13 +21,13 @@ export function useTaskUpdates() {
   const fetchTaskStats = useCallback(async () => {
     try {
       // Buscar leads com próxima ação agendada para contar tarefas reais
-      const leadsResponse = await fetch('http://localhost:8000/api/leads/?page=1&page_size=100');
+      const leadsResponse = await fetch('/api/leads?page=1&page_size=100');
       if (leadsResponse.ok) {
         const leadsData = await leadsResponse.json();
         const leadsWithTasks = leadsData.data.filter((lead: any) => lead.proxima_acao);
         
         // Buscar stats gerais do dashboard
-        const dashboardResponse = await fetch('http://localhost:8000/api/leads/analytics/dashboard');
+        const dashboardResponse = await fetch('/api/leads/analytics/dashboard');
         let dashboardStats = {};
         if (dashboardResponse.ok) {
           dashboardStats = await dashboardResponse.json();

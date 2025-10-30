@@ -37,7 +37,7 @@ export default function VendasPage() {
       let todasVendas: Lead[] = [];
       
       for (let page = 1; page <= 2; page++) {
-        const vendasResponse = await fetch(`http://localhost:8000/api/leads/?page=${page}&page_size=100`);
+        const vendasResponse = await fetch(`/api/leads?page=${page}&page_size=100`);
         if (vendasResponse.ok) {
           const vendasData = await vendasResponse.json();
           const vendasFiltradas = vendasData.data.filter((lead: Lead) => lead.status === 'Ganho');

@@ -63,7 +63,7 @@ export default function TarefasPage() {
       setLoading(true);
       
       // Buscar leads com próxima ação agendada (usar page_size=100 para garantir que pegamos a maioria)
-      const response = await fetch('http://localhost:8000/api/leads/?page=1&page_size=100');
+      const response = await fetch('/api/leads?page=1&page_size=100');
       if (response.ok) {
         const data = await response.json();
         const leadsWithTasks = data.data.filter((lead: any) => lead.proxima_acao);
