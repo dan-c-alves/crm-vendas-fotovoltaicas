@@ -6,10 +6,15 @@ const nextConfig = {
     unoptimized: true,
     domains: ['jzezbecvjquqxjnilvya.supabase.co'],
   },
-  // IMPEDE que as rotas de API sejam executadas durante o build
+  // ✅ IGNORA completamente a pasta backend
   experimental: {
     outputFileTracingExcludes: {
-      '*': ['node_modules/**/@aws-sdk/**', 'node_modules/**/@next/swc/**']
+      '*': [
+        'node_modules/**/@aws-sdk/**',
+        'node_modules/**/@next/swc/**',
+        '**/backend/**', // ✅ IGNORA BACKEND
+        '**/node_modules/pg/**', // ✅ IGNORA PostgreSQL
+      ]
     },
   },
   // Ignora TODOS os erros durante o build
@@ -30,6 +35,11 @@ const nextConfig = {
       ...config.resolve.alias,
       '@': require('path').resolve(__dirname, 'src'),
     };
+    
+    // ✅ IGNORA módulos do backend
+    config.externals = config.externals || [];
+    config.externals.push('pg', 'pg-native', 'bcrypt');
+    
     return config;
   },
 }
