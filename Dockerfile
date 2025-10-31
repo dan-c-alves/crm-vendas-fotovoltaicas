@@ -7,7 +7,7 @@ WORKDIR /app
 # Copy package files from frontend directory
 COPY frontend/package*.json ./
 
-# Install all dependencies (needed for build)
+# Install all dependencies
 RUN npm ci
 
 # Copy frontend source code
@@ -16,10 +16,14 @@ COPY frontend/ ./
 # Build the application
 RUN npm run build
 
-# Remove dev dependencies after build to optimize image size
+# Remove dev dependencies to optimize image size
 RUN npm prune --production
 
-# Expose the port that Next.js runs on
+# Set environment variables
+ENV NODE_ENV=production
+ENV PORT=3000
+
+# Expose the port
 EXPOSE 3000
 
 # Start the application
