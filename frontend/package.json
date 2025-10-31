@@ -12,6 +12,7 @@
     "vercel-build": "next build"
   },
   "dependencies": {
+    "@supabase/supabase-js": "^2.39.0",
     "@types/node": "^20.10.0",
     "@types/react": "^18.2.0",
     "@types/react-dom": "^18.2.0",
