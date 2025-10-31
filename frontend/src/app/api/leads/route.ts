@@ -77,14 +77,19 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({
       data: dataResult.map((lead: any) => ({
         id: lead.id,
-        nome: lead.nome_lead ?? '',
+        nome_lead: lead.nome_lead ?? '',  // Manter nome_lead para compatibilidade
+        nome: lead.nome_lead ?? '',       // Também incluir nome para flexibilidade
         email: lead.email ?? '',
         telefone: lead.telefone ?? '',
-        endereco: lead.morada ?? '',
+        morada: lead.morada ?? '',
+        endereco: lead.morada ?? '',      // Alias para endereco
         status: lead.status ?? '',
-        valor_estimado: lead.valor_venda_com_iva ?? null,
-        created_at: lead.data_entrada ?? null,
-        updated_at: lead.data_atualizacao ?? null
+        valor_venda_com_iva: lead.valor_venda_com_iva ?? null,
+        valor_estimado: lead.valor_venda_com_iva ?? null,  // Alias para valor_estimado
+        comissao_valor: lead.comissao_valor ?? null,
+        data_entrada: lead.data_entrada ?? null,
+        created_at: lead.created_at ?? null,
+        updated_at: lead.updated_at ?? null
       })),
       total,
       page,
@@ -121,11 +126,20 @@ export async function POST(request: NextRequest) {
     const morada = normalizeString(body.morada ?? body.endereco ?? '');
     let status = normalizeString(body.status ?? 'Entrada de Lead');
 
-    // Numeric fields (optional)
+    // Numeric fields (optional) - Convert percentages to decimals
     const valor_venda_com_iva = normalizeNumber(body.valor_venda_com_iva ?? body.valor_estimado ?? body.valor);
     const valor_proposta = normalizeNumber(body.valor_proposta);
-    const taxa_iva = normalizeNumber(body.taxa_iva);
-    const comissao_percentagem = normalizeNumber(body.comissao_percentagem);
+    
+    // Convert percentages to decimals (23 -> 0.23, 5 -> 0.05)
+    let taxa_iva = normalizeNumber(body.taxa_iva);
+    if (taxa_iva !== null && taxa_iva > 1) {
+      taxa_iva = taxa_iva / 100; // Convert percentage to decimal
+    }
+    
+    let comissao_percentagem = normalizeNumber(body.comissao_percentagem);
+    if (comissao_percentagem !== null && comissao_percentagem > 1) {
+      comissao_percentagem = comissao_percentagem / 100; // Convert percentage to decimal
+    }
 
     // Validar campos obrigatórios
     if (!nome_lead || !email || !telefone) {
