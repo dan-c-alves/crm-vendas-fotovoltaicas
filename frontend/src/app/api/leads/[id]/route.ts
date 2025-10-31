@@ -28,25 +28,32 @@ export async function GET(
 
     const lead = result[0];
     
-    // Mapear campos do banco para a estrutura esperada
+    // Mapear campos do banco para a estrutura esperada pelo frontend
     const mappedLead = {
       id: lead.id,
-      nome: lead.nome_lead,
+      nome_lead: lead.nome_lead,  // ✅ CORRIGIDO: usar nome_lead
+      nome: lead.nome_lead,       // ✅ Manter compatibilidade
       email: lead.email,
       telefone: lead.telefone,
-      endereco: lead.morada,
+      morada: lead.morada,        // ✅ CORRIGIDO: usar morada
+      endereco: lead.morada,      // ✅ Manter compatibilidade
       status: lead.status,
-      valor_estimado: lead.valor_venda_com_iva,
+      valor_venda_com_iva: lead.valor_venda_com_iva,  // ✅ CORRIGIDO
+      valor_estimado: lead.valor_venda_com_iva,       // ✅ Manter compatibilidade
       valor_proposta: lead.valor_proposta,
+      taxa_iva: lead.taxa_iva,    // ✅ ADICIONADO
+      comissao_percentagem: lead.comissao_percentagem, // ✅ ADICIONADO
       comissao_valor: lead.comissao_valor,
-      observacoes: lead.notas_conversa,
+      notas_conversa: lead.notas_conversa,  // ✅ CORRIGIDO
+      observacoes: lead.notas_conversa,     // ✅ Manter compatibilidade
+      motivo_perda: lead.motivo_perda,      // ✅ ADICIONADO
       created_at: lead.data_entrada,
       updated_at: lead.data_atualizacao,
       proxima_acao: lead.proxima_acao,
       url_imagem_cliente: lead.url_imagem_cliente,
       origem: lead.origem,
       tags: lead.tags,
-      ativo: lead.ativo
+      interesse: lead.interesse   // ✅ ADICIONADO
     };
 
     return NextResponse.json(mappedLead);
@@ -70,31 +77,81 @@ export async function PUT(
     const { id } = params;
     const body = await request.json();
     
+    console.log('📝 Dados recebidos para atualização:', body);
+
+    // Extrair dados do body com nomes corretos
     const {
-      nome,
+      nome_lead,
+      nome,  // compatibilidade
       email,
       telefone,
-      endereco,
-      fonte,
+      morada,
+      endereco, // compatibilidade
+      origem,
+      fonte, // compatibilidade
       interesse,
-      observacoes,
-      valor_estimado,
+      notas_conversa,
+      observacoes, // compatibilidade
+      valor_venda_com_iva,
+      valor_estimado, // compatibilidade
+      valor_proposta,
+      taxa_iva,
+      comissao_percentagem,
+      motivo_perda,
+      proxima_acao,
+      tags,
+      url_imagem_cliente,
       status
     } = body;
 
-    // Dados para atualizar no Supabase
-    const updateData = {
-      nome_lead: nome,
-      email,
-      telefone,
-      morada: endereco,
-      origem: fonte,
-      interesse,
-      notas_conversa: observacoes,
-      valor_venda_com_iva: valor_estimado,
-      status,
-      data_atualizacao: new Date().toISOString()
-    };
+    // Dados para atualizar no Supabase (mapeamento correto)
+    const updateData: any = {};
+
+    // Campos obrigatórios
+    if (nome_lead || nome) updateData.nome_lead = nome_lead || nome;
+    if (email !== undefined) updateData.email = email;
+    if (telefone !== undefined) updateData.telefone = telefone;
+    if (morada !== undefined || endereco !== undefined) updateData.morada = morada || endereco;
+    if (status) updateData.status = status;
+
+    // Campos opcionais
+    if (origem !== undefined || fonte !== undefined) updateData.origem = origem || fonte;
+    if (interesse !== undefined) updateData.interesse = interesse;
+    if (notas_conversa !== undefined || observacoes !== undefined) updateData.notas_conversa = notas_conversa || observacoes;
+    if (motivo_perda !== undefined) updateData.motivo_perda = motivo_perda;
+    if (proxima_acao !== undefined) updateData.proxima_acao = proxima_acao;
+    if (tags !== undefined) updateData.tags = tags;
+    if (url_imagem_cliente !== undefined) updateData.url_imagem_cliente = url_imagem_cliente;
+
+    // Campos numéricos com conversão de percentual
+    if (valor_venda_com_iva !== undefined || valor_estimado !== undefined) {
+      const valor = Number(valor_venda_com_iva || valor_estimado);
+      updateData.valor_venda_com_iva = Number.isFinite(valor) ? valor : null;
+    }
+    if (valor_proposta !== undefined) {
+      const valor = Number(valor_proposta);
+      updateData.valor_proposta = Number.isFinite(valor) ? valor : null;
+    }
+    if (taxa_iva !== undefined) {
+      let taxa = Number(taxa_iva);
+      if (Number.isFinite(taxa)) {
+        if (taxa > 1) taxa = taxa / 100; // Converter percentual para decimal
+        updateData.taxa_iva = taxa;
+      }
+    }
+    if (comissao_percentagem !== undefined) {
+      let comissao = Number(comissao_percentagem);
+      if (Number.isFinite(comissao)) {
+        if (comissao > 1) comissao = comissao / 100; // Converter percentual para decimal
+        updateData.comissao_percentagem = comissao;
+      }
+    }
+
+    // Timestamp de atualização
+    updateData.updated_at = new Date().toISOString();
+    updateData.data_atualizacao = new Date().toISOString();
+
+    console.log('📤 Dados normalizados para Supabase:', updateData);
 
     const response = await supabaseRequest(`leads?id=eq.${id}`, {
       method: 'PATCH',
