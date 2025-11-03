@@ -15,6 +15,9 @@ DATABASE_URL = os.getenv("DATABASE_URL", "postgresql://postgres:wSWYpISACPeNCDjT
 
 # Configurações de CORS
 ALLOWED_ORIGINS = os.getenv("ALLOWED_ORIGINS", "http://localhost:3000,http://127.0.0.1:3000,https://crm-fotovoltaicas.railway.app,https://jzezbecvjquqxjnilvya.supabase.co").split(',')
+# Regex opcional para permitir domínios dinâmicos (ex.: qualquer subdomínio do Railway)
+# Exemplo de uso em produção temporária: ALLOWED_ORIGIN_REGEX="^https://.*\\.railway\\.app$"
+ALLOWED_ORIGIN_REGEX = os.getenv("ALLOWED_ORIGIN_REGEX")  # None por padrão se não definido
 
 # --- CONFIGURAÇÕES DE NEGÓCIO ---
 COMISSAO_PERCENTAGEM = float(os.getenv("COMISSAO_PERCENTAGEM", "0.05"))  # 5%

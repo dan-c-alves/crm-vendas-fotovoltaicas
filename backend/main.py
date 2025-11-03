@@ -11,7 +11,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.database import init_db
 from routes import leads, auth, upload
 from routes import calendar as calendar_routes
-from config.settings import ALLOWED_ORIGINS
+from config.settings import ALLOWED_ORIGINS, ALLOWED_ORIGIN_REGEX
 
 print("🚀 Iniciando CRM API...")
 print(f"DATABASE_URL: {os.getenv('DATABASE_URL', 'NÃO CONFIGURADO')[:50]}...")
@@ -29,6 +29,7 @@ app = FastAPI(
 app.add_middleware(
     CORSMiddleware,
     allow_origins=ALLOWED_ORIGINS,
+    allow_origin_regex=ALLOWED_ORIGIN_REGEX,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
