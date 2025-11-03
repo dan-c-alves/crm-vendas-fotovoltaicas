@@ -1,12 +1,14 @@
 providers = ["python"]
 
 [phases.setup]
-nixPkgs = ["python311"]
+# Use a Python build that already includes pip
+nixPkgs = ["python311Full"]
 
 [phases.install]
 cmds = [
-  "python -m ensurepip --upgrade || true",
-  "python -m pip install --upgrade pip",
+  # Garantir ferramentas de build de pacotes Python
+  "python -m pip install --upgrade pip setuptools wheel",
+  # Instalar dependências do projeto
   "python -m pip install -r requirements.txt"
 ]
 
