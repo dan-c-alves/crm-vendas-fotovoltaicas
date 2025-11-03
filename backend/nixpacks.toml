@@ -6,10 +6,12 @@ nixPkgs = ["python311Full"]
 
 [phases.install]
 cmds = [
-  # Garantir ferramentas de build de pacotes Python
-  "python -m pip install --upgrade pip setuptools wheel",
-  # Instalar dependências do projeto
-  "python -m pip install -r requirements.txt"
+  # Se pip3 não existir, tenta habilitar via ensurepip (ignora erro)
+  "command -v pip3 >/dev/null 2>&1 || python -m ensurepip --upgrade || true",
+  # Atualiza ferramentas de build, usando python -m pip ou fallback pip3
+  "python -m pip install --upgrade pip setuptools wheel || pip3 install --upgrade pip setuptools wheel",
+  # Instalar dependências do projeto com fallback
+  "python -m pip install -r requirements.txt || pip3 install -r requirements.txt"
 ]
 
 [start]
