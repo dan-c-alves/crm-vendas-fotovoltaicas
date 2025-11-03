@@ -8,8 +8,10 @@ export async function GET(request: NextRequest) {
     console.log('🔍 API leads GET chamada');
 
     const { searchParams } = new URL(request.url);
-    const page = parseInt(searchParams.get('page') || '1');
-    const limit = parseInt(searchParams.get('limit') || '10');
+  const page = parseInt(searchParams.get('page') || '1');
+  // Suportar tanto "limit" quanto "page_size" por compatibilidade
+  const limitParam = searchParams.get('limit') || searchParams.get('page_size') || '10';
+  const limit = parseInt(limitParam);
     const status = searchParams.get('status');
     const search = searchParams.get('search');
 

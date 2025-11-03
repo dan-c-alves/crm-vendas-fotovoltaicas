@@ -18,6 +18,8 @@ export default function SettingsPage() {
     idioma: 'pt-PT',
   });
   const [authStatus, setAuthStatus] = useState<'pending' | 'success' | 'failure'>('pending');
+  const [newPassword, setNewPassword] = useState('');
+  const [changing, setChanging] = useState(false);
 
   useEffect(() => {
     // Verificar o status de autenticação após o redirect do Google
@@ -49,6 +51,30 @@ export default function SettingsPage() {
     // Redireciona para a rota de login do Backend
     const backendUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
     window.location.href = `${backendUrl}/api/auth/google/login`;
+  };
+
+  const handleChangePassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newPassword || newPassword.length < 4) {
+      toast.error('A senha deve ter pelo menos 4 caracteres.');
+      return;
+    }
+    try {
+      setChanging(true);
+      const res = await fetch('/api/auth/change-password', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ newPassword })
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data?.error || 'Falha ao trocar senha');
+      toast.success('Senha atualizada com sucesso');
+      setNewPassword('');
+    } catch (err: any) {
+      toast.error(err.message || 'Erro ao trocar senha');
+    } finally {
+      setChanging(false);
+    }
   };
 
   return (
@@ -162,6 +188,40 @@ export default function SettingsPage() {
               </select>
             </div>
           </div>
+        </div>
+
+        {/* Conta - Trocar Senha */}
+        <div className="card">
+          <h2 className="text-2xl font-bold text-dark-50 mb-6">Conta</h2>
+          <form onSubmit={handleChangePassword} className="space-y-4">
+            <div>
+              <label className="label">Nova Senha</label>
+              <input
+                type="password"
+                value={newPassword}
+                onChange={(e) => setNewPassword(e.target.value)}
+                className="input"
+                placeholder="Defina a sua nova senha"
+                required
+              />
+            </div>
+            <div className="flex gap-3">
+              <button className="btn btn-primary" disabled={changing}>
+                {changing ? 'A guardar...' : 'Guardar Senha'}
+              </button>
+              <button
+                type="button"
+                className="btn btn-secondary"
+                onClick={async () => {
+                  await fetch('/api/auth/logout', { method: 'POST' });
+                  toast.success('Sessão terminada');
+                  window.location.href = '/login';
+                }}
+              >
+                Terminar Sessão
+              </button>
+            </div>
+          </form>
         </div>
 
         {/* Notificações */}

@@ -65,3 +65,35 @@ class GoogleCalendarManager:
             print(f"Evento Google Calendar {event_id} eliminado com sucesso.")
         except Exception as e:
             print(f"Erro ao eliminar evento {event_id}: {e}")
+
+    def update_event(self, event_id: str, summary: Optional[str] = None, description: Optional[str] = None,
+                     start_time: Optional[datetime] = None, duration_minutes: int = 30,
+                     timezone: str = 'Europe/Lisbon') -> bool:
+        """
+        Atualiza um evento existente. Pode alterar resumo/descrição e/ou reagendar.
+        Retorna True em caso de sucesso.
+        """
+        try:
+            # Buscar evento atual
+            event = self.service.events().get(calendarId='primary', eventId=event_id).execute()
+
+            if summary is not None:
+                event['summary'] = summary
+            if description is not None:
+                event['description'] = description
+            if start_time is not None:
+                end_time = start_time + timedelta(minutes=duration_minutes)
+                event['start'] = {
+                    'dateTime': start_time.isoformat(),
+                    'timeZone': timezone,
+                }
+                event['end'] = {
+                    'dateTime': end_time.isoformat(),
+                    'timeZone': timezone,
+                }
+
+            self.service.events().update(calendarId='primary', eventId=event_id, body=event).execute()
+            return True
+        except Exception as e:
+            print(f"Erro ao atualizar evento {event_id}: {e}")
+            return False

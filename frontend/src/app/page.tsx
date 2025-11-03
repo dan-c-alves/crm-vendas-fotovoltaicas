@@ -38,58 +38,24 @@ export default function Dashboard() {
         
         const data = await response.json();
         
-        // Buscar leads com status "Ganho" para calcular valores detalhados
-        let vendas_ganho = [];
-        
-        // Buscar múltiplas páginas para garantir que pegamos todas as vendas
-        for (let page = 1; page <= 2; page++) {
-          const leadsResponse = await fetch(`/api/leads?page=${page}&limit=100`);
-          if (leadsResponse.ok) {
-            const leadsData = await leadsResponse.json();
-            const vendasPage = leadsData.data.filter((lead: any) => lead.status === 'Ganho');
-            vendas_ganho.push(...vendasPage);
-          }
-        }
-        
-        // Calcular valores das vendas
-        const total_vendas = vendas_ganho.length;
-        const valor_total_com_iva = vendas_ganho.reduce((sum: number, lead: any) => 
-          sum + (lead.valor_venda_com_iva || 0), 0);
-        const valor_total_sem_iva = valor_total_com_iva / 1.23; // Remover IVA de 23%
-        const comissao_total = vendas_ganho.reduce((sum: number, lead: any) => 
-          sum + (lead.comissao_valor || 0), 0);
-        const comissao_media = total_vendas > 0 ? comissao_total / total_vendas : 0;
-        
-        // Mapear os dados para o formato esperado
+        // Usar os dados corretos da API de analytics
         setStats({
           total_leads: data.totalLeads || 0,
-          total_vendas: total_vendas,
-          valor_total_vendas: valor_total_com_iva,
-          valor_total_sem_iva: valor_total_sem_iva,
-          comissao_total: comissao_total,
-          taxa_conversao: data.totalLeads > 0 ? (total_vendas / data.totalLeads) * 100 : 0,
-          valor_medio_venda: total_vendas > 0 ? valor_total_com_iva / total_vendas : 0,
-          comissao_media: comissao_media
+          total_vendas: data.vendasFechadas || 0,
+          valor_total_vendas: data.valorTotalComIva || 0,
+          valor_total_sem_iva: data.valorTotalSemIva || 0,
+          comissao_total: data.comissaoTotal || 0,
+          taxa_conversao: data.taxaConversao || 0,
+          valor_medio_venda: data.valorMedioVenda || 0,
+          comissao_media: data.comissaoMedia || 0
         });
         
         // Configurar dados do funil
-        const funilData: Record<string, number> = {};
-        data.leadsByStatus?.forEach((item: any) => {
-          funilData[item.status] = parseInt(item.count);
-        });
-        setFunil(funilData);
+        setFunil(data.leadsPorStatus || {});
         
-        // Configurar vendas por mês (dados fictícios por enquanto)
-        setVendas({
-          'Jan': 2, 'Fev': 3, 'Mar': 5, 'Abr': 4, 'Mai': 6, 'Jun': 3,
-          'Jul': 8, 'Ago': 7, 'Set': 9, 'Out': total_vendas > 10 ? total_vendas - 10 : 2
-        });
-        
-        // Configurar comissões por mês
-        setComissoes({
-          'Jan': 150, 'Fev': 200, 'Mar': 350, 'Abr': 280, 'Mai': 420, 'Jun': 180,
-          'Jul': 560, 'Ago': 490, 'Set': 630, 'Out': Math.round(comissao_media * 3)
-        });
+        // Remover dados fictícios - usar apenas dados reais
+        setVendas({});
+        setComissoes({});
         
         toast.success('Dados carregados com sucesso!');
       } catch (error) {
@@ -131,7 +97,7 @@ export default function Dashboard() {
             loading={loading}
           />
           <MetricCard
-            title="Valor Total (€)"
+            title="Valor Total COM IVA (€)"
             value={formatCurrency(stats?.valor_total_vendas)}
             icon={<FiDollarSign />}
             color="info"

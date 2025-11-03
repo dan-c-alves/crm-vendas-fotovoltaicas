@@ -43,6 +43,7 @@ class Lead(Base):
     # --- NOVOS CAMPOS ---
     url_imagem_cliente = Column(String(500))  # URL da imagem no Cloudinary
     google_event_id = Column(String(255))  # ID do evento no Google Calendar
+    tarefa_concluida = Column(Boolean, default=False)  # Se a tarefa foi concluída
     
     # Controle
     contador_tentativas = Column(Integer, default=0)
@@ -76,6 +77,7 @@ class Lead(Base):
             "proxima_acao": self.proxima_acao.isoformat() if getattr(self, 'proxima_acao', None) else None,
             "url_imagem_cliente": getattr(self, 'url_imagem_cliente', None), # NOVO
             "google_event_id": getattr(self, 'google_event_id', None), # NOVO
+            "tarefa_concluida": getattr(self, 'tarefa_concluida', False), # NOVO
             "contador_tentativas": getattr(self, 'contador_tentativas', 0),
             "ativo": getattr(self, 'ativo', True),
             "origem": getattr(self, 'origem', None),
@@ -105,8 +107,8 @@ class Meta(Base):
             "meta_vendas": self.meta_vendas,
             "meta_leads": self.meta_leads,
             "meta_comissao": self.meta_comissao,
-            "data_criacao": self.data_criacao.isoformat() if self.data_criacao else None,
-            "data_atualizacao": self.data_atualizacao.isoformat() if self.data_atualizacao else None,
+            "data_criacao": self.data_criacao.isoformat() if getattr(self, 'data_criacao', None) else None,
+            "data_atualizacao": self.data_atualizacao.isoformat() if getattr(self, 'data_atualizacao', None) else None,
         }
 
 
@@ -132,6 +134,6 @@ class Notificacao(Base):
             "titulo": self.titulo,
             "mensagem": self.mensagem,
             "lida": self.lida,
-            "data_criacao": self.data_criacao.isoformat() if self.data_criacao else None,
-            "data_leitura": self.data_leitura.isoformat() if self.data_leitura else None,
+            "data_criacao": self.data_criacao.isoformat() if getattr(self, 'data_criacao', None) else None,
+            "data_leitura": self.data_leitura.isoformat() if getattr(self, 'data_leitura', None) else None,
         }

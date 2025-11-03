@@ -1,12 +1,15 @@
 // lib/supabase.ts - CONFIGURAÇÃO COMPLETA COM LÓGICA CORRETA
 import { createClient } from '@supabase/supabase-js'
 
-// Configuração direta
-const supabaseUrl = 'https://jzezbecvjquqxjnilvya.supabase.co'
-const supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imp6ZXpiZWN2anF1cXhqbmlsdnlhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjE3NDg4MTIsImV4cCI6MjA3NzMyNDgxMn0.EqzSB-9uViwysuahjJhJKljI3jTk48ZDsAHsHAeK6dk'
+// Preferir variáveis de ambiente (novas chaves "publishable"), com fallback para as antigas
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://jzezbecvjquqxjnilvya.supabase.co'
+const supabaseKey =
+  process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_DEFAULT_KEY ||
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ||
+  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imp6ZXpiZWN2anF1cXhqbmlsdnlhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjE3NDg4MTIsImV4cCI6MjA3NzMyNDgxMn0.EqzSB-9uViwysuahjJhJKljI3jTk48ZDsAHsHAeK6dk'
 
 // Criar cliente Supabase
-export const supabase = createClient(supabaseUrl, supabaseAnonKey)
+export const supabase = createClient(supabaseUrl, supabaseKey)
 
 // Interface para o tipo Lead - ATUALIZADA
 export interface Lead {
@@ -42,7 +45,7 @@ export const STATUS_VALIDOS = [
   'Em Análise', 
   'Proposta Enviada',
   'Em Negociação',
-  'Ganho',  // ✅ VENDIDO - calcula valores
+  'Vendido',  // ✅ VENDIDO - calcula valores
   'Perdido',
   'Cancelado'
 ] as const;
@@ -123,8 +126,8 @@ export async function getDashboardStats() {
 
   const totalLeads = leads.length;
   
-  // ✅ APENAS LEADS COM STATUS "GANHO" contam para vendas
-  const leadsGanhos = leads.filter(lead => lead.status === 'Ganho');
+  // ✅ APENAS LEADS COM STATUS "Vendido" contam para vendas
+  const leadsGanhos = leads.filter(lead => lead.status === 'Vendido');
   const vendasFechadas = leadsGanhos.length;
   
   // ✅ CÁLCULOS APENAS PARA LEADS "GANHO"
@@ -261,8 +264,8 @@ export const leadsAPI = {
       if (!isNaN(valor) && valor >= 0) {
         leadData.valor_venda_com_iva = valor;
         
-        // ✅ SÓ CALCULA COMISSÃO SE O STATUS FOR "GANHO"
-        if (leadData.status === 'Ganho') {
+        // ✅ SÓ CALCULA COMISSÃO SE O STATUS FOR "Vendido"
+        if (leadData.status === 'Vendido') {
           const calculos = calcularValoresParaGanho(valor);
           leadData.comissao_valor = calculos.comissaoValor;
         }
@@ -294,6 +297,9 @@ export const leadsAPI = {
 
   // Atualizar lead - VERSÃO CORRIGIDA
   async update(id: number, updates: Partial<Lead>) {
+    console.log('🔧 Iniciando update do lead:', id);
+    console.log('🔧 Updates recebidos:', JSON.stringify(updates, null, 2));
+    
     const updateData: any = {};
 
     // Campos básicos
@@ -304,8 +310,10 @@ export const leadsAPI = {
 
     // ✅ STATUS - tratamento especial para ENUM
     if (updates.status !== undefined) {
+      console.log('🔧 Validando status:', updates.status);
       if (validarStatus(updates.status)) {
         updateData.status = updates.status;
+        console.log('✅ Status válido:', updates.status);
       } else {
         console.warn('⚠️ Status inválido:', updates.status);
         updateData.status = 'Entrada de Lead';
@@ -314,8 +322,10 @@ export const leadsAPI = {
 
     // ✅ ORIGEM - tratamento especial para ENUM
     if (updates.origem !== undefined) {
+      console.log('🔧 Validando origem:', updates.origem);
       if (validarOrigem(updates.origem)) {
         updateData.origem = updates.origem;
+        console.log('✅ Origem válida:', updates.origem);
       } else {
         console.warn('⚠️ Origem inválida:', updates.origem);
         updateData.origem = 'Website';
@@ -334,14 +344,17 @@ export const leadsAPI = {
     // ✅ CAMPOS NUMÉRICOS - SÓ RECALCULA SE MUDAR PARA "GANHO"
     if (updates.valor_venda_com_iva !== undefined) {
       const valor = Number(updates.valor_venda_com_iva);
+      console.log('🔧 Processando valor:', valor);
       if (!isNaN(valor) && valor >= 0) {
         updateData.valor_venda_com_iva = valor;
         
-        // ✅ SÓ RECALCULA COMISSÃO SE O STATUS FOR "GANHO"
+        // ✅ SÓ RECALCULA COMISSÃO SE O STATUS FOR "Vendido"
         const statusAtual = updates.status || updateData.status;
-        if (statusAtual === 'Ganho') {
+        console.log('🔧 Status para cálculo:', statusAtual);
+        if (statusAtual === 'Vendido') {
           const calculos = calcularValoresParaGanho(valor);
           updateData.comissao_valor = calculos.comissaoValor;
+          console.log('💰 Comissão calculada:', calculos.comissaoValor);
         }
       }
     }
@@ -360,7 +373,7 @@ export const leadsAPI = {
     updateData.data_atualizacao = new Date().toISOString();
     updateData.updated_at = new Date().toISOString();
 
-    console.log('📤 Dados para atualizar lead:', updateData);
+    console.log('📤 Dados finais para Supabase:', JSON.stringify(updateData, null, 2));
 
     const { data, error } = await supabase
       .from('leads')

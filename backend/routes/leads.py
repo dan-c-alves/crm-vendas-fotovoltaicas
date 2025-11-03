@@ -249,6 +249,41 @@ def atualizar_lead(lead_id: int, lead_update: LeadUpdate, db: Session = Depends(
         db.rollback()
         raise HTTPException(status_code=500, detail=f"Erro interno: {str(e)}")
 
+@router.put("/{lead_id}/concluir-tarefa")
+def concluir_tarefa(lead_id: int, db: Session = Depends(get_db)):
+    """Marcar tarefa como concluída (remove da lista de tarefas mas mantém o lead)"""
+    try:
+        lead = db.query(LeadModel).filter(LeadModel.id == lead_id).first()
+        if not lead:
+            raise HTTPException(status_code=404, detail="Lead não encontrado")
+        
+        # Marcar tarefa como concluída
+        lead.tarefa_concluida = True
+        lead.proxima_acao = None  # Remove a data agendada
+        lead.data_atualizacao = datetime.utcnow()
+        
+        # Eliminar evento do Google Calendar se existir
+        if lead.google_event_id:
+            user = db.query(UserModel).filter(UserModel.id == 1).first()
+            if user and user.google_calendar_token:
+                try:
+                    manager = GoogleCalendarManager(token=user.google_calendar_token)
+                    manager.delete_event(lead.google_event_id)
+                    lead.google_event_id = None
+                except Exception as e:
+                    print(f"⚠️ Erro ao eliminar evento do Google Calendar: {e}")
+        
+        db.commit()
+        db.refresh(lead)
+        
+        print(f"✅ Tarefa do lead {lead_id} marcada como concluída")
+        return {"message": "Tarefa concluída com sucesso", "lead": lead.to_dict()}
+        
+    except Exception as e:
+        print(f"❌ Erro ao concluir tarefa: {e}")
+        db.rollback()
+        raise HTTPException(status_code=500, detail=str(e))
+
 @router.delete("/{lead_id}", status_code=204)
 def eliminar_lead(lead_id: int, db: Session = Depends(get_db)):
     """Eliminar um lead (soft delete)"""
@@ -281,6 +316,8 @@ def eliminar_lead(lead_id: int, db: Session = Depends(get_db)):
 def obter_estatisticas_dashboard(db: Session = Depends(get_db)):
     """Obter estatísticas para o dashboard"""
     try:
+        print("📊 Analytics API chamada")
+        
         # Buscar todos os leads ativos
         leads = db.query(LeadModel).filter(LeadModel.ativo == True).all()
         
@@ -290,34 +327,56 @@ def obter_estatisticas_dashboard(db: Session = Depends(get_db)):
         # Estatísticas básicas
         total_leads = len(leads_data)
         leads_ganhos = [l for l in leads_data if l['status'] == 'Ganho']
-        total_vendas = len(leads_ganhos)
+        vendas_fechadas = len(leads_ganhos)
         
-        # Valores financeiros
-        valor_total_vendas = sum(l.get('valor_venda_com_iva', 0) or 0 for l in leads_ganhos)
-        comissao_total = sum(l.get('comissao_valor', 0) or 0 for l in leads_ganhos)
+        # Calcular valores financeiros apenas para leads "Ganho"
+        valor_total_com_iva = 0.0
+        valor_total_sem_iva = 0.0
+        comissao_total = 0.0
+        
+        for lead in leads_ganhos:
+            valor_com_iva = float(lead.get('valor_venda_com_iva', 0) or 0)
+            if valor_com_iva > 0:
+                # Calcular valor sem IVA (23%)
+                valor_sem_iva = valor_com_iva / 1.23
+                # Calcular comissão (5% do valor sem IVA)
+                comissao = valor_sem_iva * 0.05
+                
+                valor_total_com_iva += valor_com_iva
+                valor_total_sem_iva += valor_sem_iva
+                comissao_total += comissao
+        
+        # Médias
+        valor_medio_venda = valor_total_com_iva / vendas_fechadas if vendas_fechadas > 0 else 0
+        comissao_media = comissao_total / vendas_fechadas if vendas_fechadas > 0 else 0
         
         # Taxa de conversão
-        taxa_conversao = AnalyticsCalculator.calcular_taxa_conversao(total_leads, total_vendas)
+        taxa_conversao = (vendas_fechadas / total_leads * 100) if total_leads > 0 else 0
         
         # Distribuição por status
-        leads_por_status = AnalyticsCalculator.obter_distribuicao_por_status(leads_data)
+        leads_por_status = {}
+        for lead in leads_data:
+            status = lead['status']
+            leads_por_status[status] = leads_por_status.get(status, 0) + 1
         
-        # Vendas por mês
-        vendas_por_mes = AnalyticsCalculator.obter_vendas_por_mes(leads_data)
+        # Leads com tarefas pendentes (próxima ação definida)
+        leads_com_tarefas = len([l for l in leads_data if l.get('proxima_acao')])
         
-        # Comissões por mês  
-        comissao_por_mes = AnalyticsCalculator.obter_comissoes_por_mes(leads_data)
-        
-        return {
-            "total_leads": total_leads,
-            "total_vendas": total_vendas,
-            "valor_total_vendas": valor_total_vendas,
-            "comissao_total": comissao_total,
-            "taxa_conversao": taxa_conversao,
-            "leads_por_status": leads_por_status,
-            "vendas_por_mes": vendas_por_mes,
-            "comissao_por_mes": comissao_por_mes
+        analytics_data = {
+            "totalLeads": total_leads,
+            "vendasFechadas": vendas_fechadas,
+            "valorTotalComIva": round(valor_total_com_iva, 2),
+            "valorTotalSemIva": round(valor_total_sem_iva, 2),
+            "comissaoTotal": round(comissao_total, 2),
+            "taxaConversao": round(taxa_conversao, 1),
+            "valorMedioVenda": round(valor_medio_venda, 2),
+            "comissaoMedia": round(comissao_media, 2),
+            "leadsPorStatus": leads_por_status,
+            "leadsComTarefas": leads_com_tarefas
         }
+        
+        print(f"📊 Analytics calculadas: {analytics_data}")
+        return analytics_data
         
     except Exception as e:
         print(f"❌ Erro ao calcular estatísticas: {e}")

@@ -1,13 +1,19 @@
 # backend/routes/auth.py
 
-from fastapi import APIRouter, Depends, HTTPException, status
-from starlette.responses import RedirectResponse
+from fastapi import APIRouter, Depends, HTTPException
+from fastapi.responses import RedirectResponse
+from sqlalchemy.orm import Session
 from google_auth_oauthlib.flow import Flow
 from google.oauth2.credentials import Credentials
-from config.settings import GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, GOOGLE_REDIRECT_URI, SCOPES
+
 from app.database import get_db
-from sqlalchemy.orm import Session
-from models.user import User 
+from models.user import User as UserModel
+from config.settings import (
+    GOOGLE_CLIENT_ID,
+    GOOGLE_CLIENT_SECRET,
+    GOOGLE_REDIRECT_URI,
+    SCOPES
+)
 
 router = APIRouter(prefix="/api/auth", tags=["auth"])
 
@@ -48,7 +54,7 @@ def google_callback(code: str, db: Session = Depends(get_db)):
         credentials = flow.credentials
         
         # Guardar o token no utilizador padrão (ID 1)
-        user = db.query(User).filter(User.id == 1).first()
+        user = db.query(UserModel).filter(UserModel.id == 1).first()
         if not user:
             raise HTTPException(status_code=404, detail="Utilizador padrão não encontrado")
             

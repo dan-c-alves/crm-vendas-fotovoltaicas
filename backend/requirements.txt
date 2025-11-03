@@ -4,6 +4,15 @@ sqlalchemy
 pydantic
 python-multipart
 
+# PostgreSQL adapter
+psycopg2-binary
+
+# Timezone support
+pytz
+
+# Carregar .env em desenvolvimento
+python-dotenv
+
 # Dependências para Google Calendar
 google-api-python-client
 google-auth-oauthlib

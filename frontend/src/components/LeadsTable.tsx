@@ -33,7 +33,7 @@ const statusColors: Record<string, string> = {
   'Proposta Entregue': 'badge-primary',
   'Negociação': 'badge-warning',
   'Hot Lead': 'badge-danger',
-  'Ganho': 'badge-success',
+  'Vendido': 'badge-success',
   'Perdidos': 'badge-secondary',
   'Não Atende': 'badge-secondary',
 };

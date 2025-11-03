@@ -62,11 +62,13 @@ export default function TarefasPage() {
     try {
       setLoading(true);
       
-      // Buscar leads com próxima ação agendada (usar page_size=100 para garantir que pegamos a maioria)
+      // Buscar leads com próxima ação agendada e que NÃO estão concluídos (usar page_size=100 para garantir que pegamos a maioria)
       const response = await fetch('/api/leads?page=1&page_size=100');
       if (response.ok) {
         const data = await response.json();
-        const leadsWithTasks = data.data.filter((lead: any) => lead.proxima_acao);
+        const leadsWithTasks = data.data.filter((lead: any) => 
+          lead.proxima_acao && !lead.tarefa_concluida
+        );
         
         const tasksData = {
           total_tarefas: leadsWithTasks.length,
@@ -130,12 +132,20 @@ export default function TarefasPage() {
 
   const handleCompleteTask = async (taskId: number) => {
     try {
-      const response = await apiClient.updateLead(taskId, {
-        proxima_acao: ''
+      // Usar o novo endpoint específico para concluir tarefa
+      const response = await fetch(`/api/leads/${taskId}/concluir-tarefa`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json'
+        }
       });
-      
-      toast.success('Tarefa concluída!');
-      fetchTasks();
+
+      if (response.ok) {
+        toast.success('Tarefa concluída!');
+        fetchTasks();
+      } else {
+        throw new Error('Erro ao concluir tarefa');
+      }
     } catch (error) {
       console.error('Erro ao concluir tarefa:', error);
       toast.error('Erro ao concluir tarefa');

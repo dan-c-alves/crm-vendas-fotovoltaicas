@@ -12,8 +12,12 @@ if DATABASE_URL.startswith("sqlite"):
     db_path = DATABASE_URL.replace("sqlite:///", "")
     os.makedirs(os.path.dirname(db_path), exist_ok=True)
 
+# Configurar engine (PostgreSQL não precisa de connect_args especiais)
 engine = create_engine(
-    DATABASE_URL, connect_args={"check_same_thread": False} if DATABASE_URL.startswith("sqlite") else {}
+    DATABASE_URL,
+    connect_args={"check_same_thread": False} if DATABASE_URL.startswith("sqlite") else {},
+    pool_pre_ping=True,  # Verificar conexões antes de usar
+    pool_recycle=3600,   # Reciclar conexões a cada hora
 )
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 

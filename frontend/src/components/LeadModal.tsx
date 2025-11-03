@@ -39,7 +39,7 @@ const statusOptions = [
   'Proposta Entregue',
   'Negociação',
   'Hot Lead',
-  'Ganho',
+  'Vendido',
   'Perdidos',
   'Não Atende',
 ];
@@ -64,12 +64,25 @@ export default function LeadModal({ isOpen, onClose, onSave, lead }: LeadModalPr
 
   useEffect(() => {
     if (lead) {
+      // Converter proxima_acao para formato datetime-local se existir
+      let proximaAcaoFormatada = '';
+      if (lead.proxima_acao) {
+        try {
+          const date = new Date(lead.proxima_acao);
+          // Formato: YYYY-MM-DDTHH:mm
+          proximaAcaoFormatada = date.toISOString().slice(0, 16);
+        } catch (e) {
+          console.warn('Erro ao converter proxima_acao:', e);
+        }
+      }
+
       setFormData({
         ...lead,
         valor_venda_com_iva: lead.valor_venda_com_iva || 0,
         taxa_iva: lead.taxa_iva || 0.23,
         valor_proposta: lead.valor_proposta || 0,
         comissao_percentagem: lead.comissao_percentagem || 0.05,
+        proxima_acao: proximaAcaoFormatada,
       });
     } else {
       setFormData({
@@ -94,6 +107,19 @@ export default function LeadModal({ isOpen, onClose, onSave, lead }: LeadModalPr
     setLoading(true);
 
     try {
+      // Converter proxima_acao de datetime-local para ISO se existir
+      let proximaAcaoISO = formData.proxima_acao || '';
+      if (proximaAcaoISO) {
+        try {
+          // Se já tiver valor, converter para ISO completo
+          const date = new Date(proximaAcaoISO);
+          proximaAcaoISO = date.toISOString();
+        } catch (e) {
+          console.warn('Erro ao converter proxima_acao para ISO:', e);
+          proximaAcaoISO = '';
+        }
+      }
+
       // Preparar dados garantindo tipos corretos
       const submitData = {
         ...formData,
@@ -101,6 +127,7 @@ export default function LeadModal({ isOpen, onClose, onSave, lead }: LeadModalPr
         taxa_iva: formData.taxa_iva ? Number(formData.taxa_iva) : 23,
         valor_proposta: formData.valor_proposta ? Number(formData.valor_proposta) : 0,
         comissao_percentagem: formData.comissao_percentagem ? Number(formData.comissao_percentagem) : 10,
+        proxima_acao: proximaAcaoISO || undefined,
       };
 
       console.log('📤 Enviando dados:', submitData);
@@ -238,6 +265,26 @@ export default function LeadModal({ isOpen, onClose, onSave, lead }: LeadModalPr
               </div>
             </div>
 
+            {/* CAMPO PRÓXIMA AÇÃO - MOVIDO PARA CIMA PARA MAIOR VISIBILIDADE */}
+            <div className="bg-primary-500/10 border border-primary-500/30 rounded-lg p-4">
+              <label className="block text-sm font-medium text-primary-400 mb-2 flex items-center gap-2">
+                <span className="text-xl">📅</span>
+                <span>Agendar Próxima Ação (Data e Hora)</span>
+              </label>
+              <input
+                type="datetime-local"
+                name="proxima_acao"
+                value={formData.proxima_acao}
+                onChange={handleChange}
+                className="input w-full"
+                placeholder="Escolha data e hora"
+              />
+              <p className="text-xs text-dark-400 mt-2 flex items-start gap-1">
+                <span>💡</span>
+                <span>Esta tarefa aparecerá na página Tarefas e pode sincronizar com Google Calendar</span>
+              </p>
+            </div>
+
             {/* Morada */}
             <div>
               <label className="block text-sm font-medium text-dark-300 mb-2">
@@ -302,33 +349,18 @@ export default function LeadModal({ isOpen, onClose, onSave, lead }: LeadModalPr
             </div>
 
             {/* Outros campos */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-dark-300 mb-2">
-                  Origem
-                </label>
-                <input
-                  type="text"
-                  name="origem"
-                  value={formData.origem}
-                  onChange={handleChange}
-                  className="input"
-                  placeholder="Facebook, Google, Referência..."
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-dark-300 mb-2">
-                  Próxima Ação
-                </label>
-                <input
-                  type="datetime-local"
-                  name="proxima_acao"
-                  value={formData.proxima_acao}
-                  onChange={handleChange}
-                  className="input"
-                />
-              </div>
+            <div>
+              <label className="block text-sm font-medium text-dark-300 mb-2">
+                Origem
+              </label>
+              <input
+                type="text"
+                name="origem"
+                value={formData.origem}
+                onChange={handleChange}
+                className="input"
+                placeholder="Facebook, Google, Referência..."
+              />
             </div>
 
             {/* Notas */}

@@ -25,7 +25,6 @@ export default function Sidebar({ isOpen, onToggle }: SidebarProps) {
       icon: FiCheckSquare,
       badge: taskStats.total_tarefas > 0 ? taskStats.total_tarefas : null
     },
-    { name: 'Vendas', href: '/vendas', icon: FiTrendingUp },
     { name: 'Configurações', href: '/settings', icon: FiSettings },
   ];
 
