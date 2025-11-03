@@ -1,17 +1,19 @@
 providers = ["python"]
 
 [phases.setup]
-# Use a Python build that already includes pip
-nixPkgs = ["python311Full"]
+# Inclui Python e utilitários necessários (curl como fallback para get-pip.py)
+nixPkgs = ["python311", "curl"]
 
 [phases.install]
 cmds = [
-  # Se pip3 não existir, tenta habilitar via ensurepip (ignora erro)
-  "command -v pip3 >/dev/null 2>&1 || python -m ensurepip --upgrade || true",
-  # Atualiza ferramentas de build, usando python -m pip ou fallback pip3
-  "python -m pip install --upgrade pip setuptools wheel || pip3 install --upgrade pip setuptools wheel",
-  # Instalar dependências do projeto com fallback
-  "python -m pip install -r requirements.txt || pip3 install -r requirements.txt"
+  # 1) Tenta habilitar pip via ensurepip (não falha se não suportado)
+  "python -m ensurepip --upgrade || true",
+  # 2) Se ainda não houver pip, usa bootstrap oficial (requer curl instalado via nixPkgs)
+  "python -m pip --version || (curl -sS https://bootstrap.pypa.io/get-pip.py -o get-pip.py && python get-pip.py)",
+  # 3) Atualiza ferramentas
+  "python -m pip install --upgrade pip setuptools wheel",
+  # 4) Instala dependências do projeto
+  "python -m pip install -r requirements.txt"
 ]
 
 [start]
