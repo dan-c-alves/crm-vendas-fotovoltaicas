@@ -33,19 +33,49 @@ function LoginInner() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-100 p-4">
-      <form onSubmit={onSubmit} className="bg-white shadow rounded p-6 w-full max-w-sm">
-        <h1 className="text-2xl font-semibold mb-4">Entrar</h1>
-        <p className="text-sm text-gray-600 mb-4">Use o seu email ou username e a sua senha.</p>
-        <label className="block text-sm font-medium">Email ou Username</label>
-        <input className="w-full border rounded px-3 py-2 mb-3" value={identifier} onChange={(e) => setIdentifier(e.target.value)} required />
-        <label className="block text-sm font-medium">Senha</label>
-        <input className="w-full border rounded px-3 py-2 mb-4" type="password" value={password} onChange={(e) => setPassword(e.target.value)} required />
-        <button disabled={loading} className="w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700 disabled:opacity-50">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100 p-4">
+      <form onSubmit={onSubmit} className="bg-white/90 backdrop-blur shadow-xl rounded-2xl p-8 w-full max-w-md border border-white/20">
+        <div className="text-center mb-6">
+          <h1 className="text-3xl font-bold text-gray-800 mb-2">Bem-vindo</h1>
+          <p className="text-sm text-gray-600">Faça login para continuar</p>
+        </div>
+        
+        <div className="space-y-4">
+          <div>
+            <label className="block text-sm font-semibold text-gray-700 mb-2">Email</label>
+            <input 
+              className="w-full border-2 border-gray-300 rounded-lg px-4 py-3 text-gray-800 placeholder-gray-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all" 
+              type="email"
+              placeholder="seu@email.com"
+              value={identifier} 
+              onChange={(e) => setIdentifier(e.target.value)} 
+              required 
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-semibold text-gray-700 mb-2">Senha</label>
+            <input 
+              className="w-full border-2 border-gray-300 rounded-lg px-4 py-3 text-gray-800 placeholder-gray-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all" 
+              type="password"
+              placeholder="Digite sua senha"
+              value={password} 
+              onChange={(e) => setPassword(e.target.value)} 
+              required 
+            />
+          </div>
+        </div>
+
+        <button 
+          disabled={loading} 
+          className="w-full mt-6 bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-semibold py-3 rounded-lg hover:from-blue-700 hover:to-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
+        >
           {loading ? 'Entrando...' : 'Entrar'}
         </button>
-        <div className="text-sm mt-4 text-center">
-          <a href="/register" className="text-blue-600 hover:underline">Criar conta</a>
+
+        <div className="text-sm mt-6 text-center">
+          <span className="text-gray-600">Não tem conta? </span>
+          <a href="/register" className="text-blue-600 font-semibold hover:underline">Criar conta</a>
         </div>
       </form>
     </div>
