@@ -13,7 +13,7 @@ export default function PinPage() {
     if (pin === PIN_CORRETO) {
       document.cookie = "crm_auth=ok; path=/; max-age=86400"
       toast.success('Acesso autorizado!')
-      router.push('/leads')
+      router.replace('/leads')
     } else {
       toast.error('PIN incorreto!')
       setPin('')

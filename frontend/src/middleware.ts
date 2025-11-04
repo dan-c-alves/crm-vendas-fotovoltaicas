@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 
 // Rotas que precisam de autenticação (PIN)
-const ROTAS_PROTEGIDAS = ['/leads', '/tarefas', '/dashboard', '/settings']
+const ROTAS_PROTEGIDAS = ['/leads', '/tarefas', '/settings']
 
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl
@@ -25,5 +25,5 @@ export function middleware(request: NextRequest) {
 
 // Configurar quais rotas o middleware deve processar
 export const config = {
-  matcher: ['/leads/:path*', '/tarefas/:path*', '/dashboard/:path*', '/settings/:path*']
+  matcher: ['/leads/:path*', '/tarefas/:path*', '/settings/:path*']
 }

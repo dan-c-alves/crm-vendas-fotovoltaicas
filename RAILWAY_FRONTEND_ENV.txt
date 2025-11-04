@@ -1,0 +1,27 @@
+# ============================================
+# VARIÁVEIS DE AMBIENTE PARA O FRONTEND RAILWAY
+# ============================================
+# Copie estas variáveis e adicione no Railway:
+# 1. Acesse https://railway.app/dashboard
+# 2. Selecione o serviço FRONTEND
+# 3. Vá em "Variables"
+# 4. Clique em "Raw Editor"
+# 5. Cole as variáveis abaixo
+
+# Supabase (PUBLIC - podem ser expostas)
+NEXT_PUBLIC_SUPABASE_URL=https://jzezbecvjquqxjnilvya.supabase.co
+NEXT_PUBLIC_SUPABASE_PUBLISHABLE_DEFAULT_KEY=sb_publishable_KIe4WPCL9_rW0zbr7yvj1A_LmS5pANL
+
+# IMPORTANTE: JWT Secret (OBRIGATÓRIO para autenticação funcionar!)
+APP_JWT_SECRET=crm-vendas-fotovoltaicas-secret-key-2024-railway
+NEXT_PRIVATE_JWT_SECRET=crm-vendas-fotovoltaicas-secret-key-2024-railway
+
+# Backend URL (já deve estar configurado)
+NEXT_PUBLIC_API_URL=https://1b619e43-b2e8-434d-ba34-b246a8074d20.railway.app
+
+# Aplicação
+NEXT_PUBLIC_APP_NAME=CRM Vendas Fotovoltaicas
+NEXT_PUBLIC_APP_VERSION=1.0.0
+
+# Node Environment
+NODE_ENV=production
