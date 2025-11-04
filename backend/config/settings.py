@@ -14,7 +14,10 @@ DEBUG = os.getenv("DEBUG", "True").lower() == "true"
 DATABASE_URL = os.getenv("DATABASE_URL", "postgresql://postgres:wSWYpISACPeNCDjTwuiYcuCsQUQFWxRe@postgres.railway.internal:5432/railway")
 
 # Configurações de CORS
-ALLOWED_ORIGINS = os.getenv("ALLOWED_ORIGINS", "http://localhost:3000,http://127.0.0.1:3000,https://crm-fotovoltaicas.railway.app,https://jzezbecvjquqxjnilvya.supabase.co").split(',')
+ALLOWED_ORIGINS = os.getenv(
+	"ALLOWED_ORIGINS",
+	"http://localhost:3000,http://127.0.0.1:3000,https://insightful-light-production.up.railway.app"
+).split(',')
 # Regex opcional para permitir domínios dinâmicos (ex.: qualquer subdomínio do Railway)
 # Exemplo de uso em produção temporária: ALLOWED_ORIGIN_REGEX="^https://.*\\.railway\\.app$"
 ALLOWED_ORIGIN_REGEX = os.getenv("ALLOWED_ORIGIN_REGEX")  # None por padrão se não definido
