@@ -10,7 +10,7 @@ def create_admin_user():
     db = SessionLocal()
     try:
         # Verificar se já existe
-        existing = db.query(User).filter(User.email == 'danilocalves86@gmail.com').first()
+        existing = db.query(User).filter(User.email == 'danilocalves86@gmail.com').first()  # type: ignore
         if existing:
             print(f"❌ Utilizador já existe: {existing.email}")
             return
