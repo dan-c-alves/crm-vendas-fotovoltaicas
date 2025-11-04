@@ -1,0 +1,29 @@
+# Variáveis de ambiente para o Backend no Railway
+# Cole estas variáveis em: Settings → Variables
+
+# DATABASE_URL - Usando Connection Pooler do Supabase (IPv4-friendly)
+# Conforme o seu projeto (região EU West 1)
+# IMPORTANTE (Python/psycopg2): não use "?pgbouncer=true" — o psycopg2 não reconhece essa opção e lança "invalid connection option 'pgbouncer'".
+# Em vez disso, use sslmode=require para TLS:
+DATABASE_URL=postgresql://postgres.jzezbecvjquqxjnilvya:Dan31018858%2A@aws-1-eu-west-1.pooler.supabase.com:6543/postgres?sslmode=require
+
+# Chave secreta do backend
+SECRET_KEY=1f7a9c3e5b2d4a8f0c6b1e3d7a9c2f5e8b4d1a7c3e9f2b6d0a4c8e1f3b7d9a2
+
+# CORS - permite localhost e qualquer domínio .railway.app
+ALLOWED_ORIGINS=http://localhost:3000
+ALLOWED_ORIGIN_REGEX=^https://.*\.railway\.app$
+
+# Configurações de negócio
+COMISSAO_PERCENTAGEM=0.05
+IVA_TAXA=0.23
+
+# (Opcional) Google Calendar - deixe vazio se não usar
+GOOGLE_CLIENT_ID=
+GOOGLE_CLIENT_SECRET=
+GOOGLE_REDIRECT_URI=
+
+# (Opcional) Cloudinary - deixe vazio se não usar
+CLOUDINARY_CLOUD_NAME=
+CLOUDINARY_API_KEY=
+CLOUDINARY_API_SECRET=

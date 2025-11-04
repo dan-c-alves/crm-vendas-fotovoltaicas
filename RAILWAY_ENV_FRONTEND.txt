@@ -1,0 +1,12 @@
+# Variáveis de ambiente para o Frontend no Railway
+# Cole estas variáveis em: Settings → Variables
+
+# URL do Backend (substitua pelo domínio real do seu backend no Railway)
+NEXT_PUBLIC_API_URL=https://1b619e43-b2e8-434d-ba34-b246a8074d20.railway.app
+
+# Supabase - URL e Chave Pública
+NEXT_PUBLIC_SUPABASE_URL=https://jzezbecvjquqxjnilvya.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imp6ZXpiZWN2anF1cXhqbmlsdnlhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjE3NDg4MTIsImV4cCI6MjA3NzMyNDgxMn0.EqzSB-9uViwysuahjJhJKljI3jTk48ZDsAHsHAeK6dk
+
+# JWT Secret para autenticação no frontend
+APP_JWT_SECRET=a6f8e2b1c9d4a7f3e8b5c2d1a9f6e3b8
