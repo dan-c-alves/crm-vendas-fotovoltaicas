@@ -4,6 +4,8 @@ sqlalchemy
 pydantic
 python-multipart
 email-validator
+bcrypt
+pyjwt
 
 # PostgreSQL adapter
 psycopg2-binary
