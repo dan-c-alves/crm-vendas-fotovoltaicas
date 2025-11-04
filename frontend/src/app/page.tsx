@@ -1,11 +1,11 @@
 ﻿"use client"
-import { useEffect, useState } from 'react'
+import { useEffect, useState, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import toast, { Toaster } from 'react-hot-toast'
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'
 
-export default function LoginPage() {
+function LoginContent() {
   const [rememberMe, setRememberMe] = useState(true)
   const [loading, setLoading] = useState(false)
   const router = useRouter()
@@ -188,5 +188,25 @@ export default function LoginPage() {
         </div>
       </div>
     </div>
+  )
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={
+      <div style={{
+        minHeight: '100vh',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        background: 'linear-gradient(135deg, #1e293b 0%, #1e40af 50%, #1e293b 100%)',
+        color: 'white',
+        fontSize: '18px'
+      }}>
+        Carregando...
+      </div>
+    }>
+      <LoginContent />
+    </Suspense>
   )
 }
