@@ -21,10 +21,9 @@ RUN npm prune --production
 
 # Set environment variables
 ENV NODE_ENV=production
-ENV PORT=3000
 
-# Expose the port
-EXPOSE 3000
+# Expose the port (Railway will set PORT dynamically)
+EXPOSE $PORT
 
-# Start the application
-CMD ["npm", "run", "start"]
+# Start the application using sh to expand $PORT variable
+CMD ["sh", "-c", "PORT=${PORT:-3000} npm run start"]
