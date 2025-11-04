@@ -1,26 +1,29 @@
 # backend/routes/auth.py
 
 from fastapi import APIRouter, Depends, HTTPException
-from fastapi.responses import RedirectResponse
+from fastapi.responses import RedirectResponse, JSONResponse
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import IntegrityError
 from google_auth_oauthlib.flow import Flow
 from google.oauth2.credentials import Credentials
+from googleapiclient.discovery import build
 from pydantic import BaseModel, EmailStr
 import jwt
 from datetime import datetime, timedelta
+import os
 
 from app.database import get_db
 from models.user import User as UserModel
 from config.settings import (
     GOOGLE_CLIENT_ID,
     GOOGLE_CLIENT_SECRET,
-    GOOGLE_REDIRECT_URI,
-    SCOPES,
     SECRET_KEY
 )
 
 router = APIRouter(prefix="/api/auth", tags=["auth"])
+
+# Email autorizado
+ALLOWED_EMAIL = "danilocalves86@gmail.com"
 
 # Schemas Pydantic
 class RegisterRequest(BaseModel):
@@ -37,27 +40,37 @@ class TokenResponse(BaseModel):
     token_type: str = "bearer"
     user: dict
 
-def create_access_token(data: dict):
+class GoogleUserInfo(BaseModel):
+    email: str
+    nome: str
+    foto: str | None = None
+
+def create_access_token(data: dict, remember_me: bool = False):
     """Cria um token JWT"""
     to_encode = data.copy()
-    expire = datetime.utcnow() + timedelta(days=30)
+    expire = datetime.utcnow() + timedelta(days=30 if remember_me else 1)
     to_encode.update({"exp": expire})
     return jwt.encode(to_encode, SECRET_KEY, algorithm="HS256")
 
-# Configuração do fluxo OAuth
-flow = Flow.from_client_config(
-    client_config={
-        "web": {
-            "client_id": GOOGLE_CLIENT_ID,
-            "client_secret": GOOGLE_CLIENT_SECRET,
-            "auth_uri": "https://accounts.google.com/o/oauth2/auth",
-            "token_uri": "https://oauth2.googleapis.com/token",
-            "redirect_uris": [GOOGLE_REDIRECT_URI],
-        }
-    },
-    scopes=SCOPES,
-    redirect_uri=GOOGLE_REDIRECT_URI
- )
+def get_google_oauth_flow(redirect_uri: str):
+    """Cria um fluxo OAuth do Google com o redirect_uri especificado"""
+    return Flow.from_client_config(
+        client_config={
+            "web": {
+                "client_id": GOOGLE_CLIENT_ID,
+                "client_secret": GOOGLE_CLIENT_SECRET,
+                "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+                "token_uri": "https://oauth2.googleapis.com/token",
+            }
+        },
+        scopes=[
+            "openid",
+            "https://www.googleapis.com/auth/userinfo.email",
+            "https://www.googleapis.com/auth/userinfo.profile",
+            "https://www.googleapis.com/auth/calendar.events"
+        ],
+        redirect_uri=redirect_uri
+    )
 
 @router.post("/register", response_model=TokenResponse)
 def register(data: RegisterRequest, db: Session = Depends(get_db)):
@@ -115,40 +128,110 @@ def login(data: LoginRequest, db: Session = Depends(get_db)):
     }
 
 @router.get("/google/login")
-def google_login():
+def google_login(redirect_uri: str = None):
     """
     Inicia o fluxo de autenticação do Google.
     """
+    # Determinar redirect_uri baseado no ambiente
+    if not redirect_uri:
+        redirect_uri = os.getenv("GOOGLE_REDIRECT_URI", "http://localhost:8000/api/auth/google/callback")
+    
+    flow = get_google_oauth_flow(redirect_uri)
     authorization_url, state = flow.authorization_url(
         access_type='offline',
-        include_granted_scopes='true'
+        include_granted_scopes='true',
+        prompt='consent'  # Força mostrar tela de consentimento
     )
-    # Redirecionar para o Google
-    return RedirectResponse(authorization_url)
+    
+    return {"authorization_url": authorization_url}
 
 @router.get("/google/callback")
-def google_callback(code: str, db: Session = Depends(get_db)):
+def google_callback(code: str, state: str = None, db: Session = Depends(get_db)):
     """
-    Recebe o código de autorização e troca por um token, guardando-o no User.
+    Recebe o código de autorização do Google e autentica o usuário.
     """
     try:
+        # Determinar redirect_uri
+        redirect_uri = os.getenv("GOOGLE_REDIRECT_URI", "http://localhost:8000/api/auth/google/callback")
+        flow = get_google_oauth_flow(redirect_uri)
+        
+        # Trocar código por token
         flow.fetch_token(code=code)
         credentials = flow.credentials
         
-        # Guardar o token no utilizador padrão (ID 1)
-        user = db.query(UserModel).filter(UserModel.id == 1).first()
-        if not user:
-            raise HTTPException(status_code=404, detail="Utilizador padrão não encontrado")
-            
-        user.google_calendar_token = credentials.token
-        db.commit()
+        # Obter informações do usuário do Google
+        service = build('oauth2', 'v2', credentials=credentials)
+        user_info = service.userinfo().get().execute()
         
-        # Redirecionar de volta para o Frontend (página de Configurações)
-        frontend_url = "http://localhost:3000/settings" 
-        return RedirectResponse(frontend_url + "?auth=success" )
+        email = user_info.get('email')
+        nome = user_info.get('name', '')
+        foto = user_info.get('picture', '')
+        google_id = user_info.get('id')
+        
+        # Verificar se o email é autorizado
+        if email != ALLOWED_EMAIL:
+            frontend_url = os.getenv("FRONTEND_URL", "http://localhost:3000")
+            return RedirectResponse(f"{frontend_url}/?error=unauthorized")
+        
+        # Buscar ou criar usuário
+        user = db.query(UserModel).filter(UserModel.email == email).first()
+        
+        if not user:
+            user = UserModel(
+                email=email,
+                nome=nome,
+                google_id=google_id
+            )
+            db.add(user)
+        else:
+            user.nome = nome
+            user.google_id = google_id
+        
+        # Salvar tokens do Google
+        user.google_access_token = credentials.token
+        user.google_refresh_token = credentials.refresh_token if credentials.refresh_token else user.google_refresh_token
+        user.google_calendar_token = credentials.token  # Compatibilidade com Calendar
+        
+        db.commit()
+        db.refresh(user)
+        
+        # Criar JWT token (assume remember_me = True)
+        token = create_access_token({
+            "sub": user.email,
+            "id": user.id,
+            "nome": nome,
+            "foto": foto
+        }, remember_me=True)
+        
+        # Redirecionar para frontend com token
+        frontend_url = os.getenv("FRONTEND_URL", "http://localhost:3000")
+        return RedirectResponse(f"{frontend_url}/?token={token}")
         
     except Exception as e:
         print(f"Erro no callback do Google: {e}")
-        # Redirecionar com erro para o frontend
-        frontend_url = "http://localhost:3000/settings" 
-        return RedirectResponse(frontend_url + "?auth=failure" )
+        frontend_url = os.getenv("FRONTEND_URL", "http://localhost:3000")
+        return RedirectResponse(f"{frontend_url}/?error=auth_failed")
+
+@router.get("/me")
+def get_current_user(token: str, db: Session = Depends(get_db)):
+    """
+    Retorna informações do usuário autenticado baseado no token JWT.
+    """
+    try:
+        payload = jwt.decode(token, SECRET_KEY, algorithms=["HS256"])
+        user_id = payload.get("id")
+        
+        user = db.query(UserModel).filter(UserModel.id == user_id).first()
+        if not user:
+            raise HTTPException(status_code=404, detail="Usuário não encontrado")
+        
+        return {
+            "id": user.id,
+            "email": user.email,
+            "nome": user.nome or payload.get("nome", ""),
+            "foto": payload.get("foto", "")
+        }
+    except jwt.ExpiredSignatureError:
+        raise HTTPException(status_code=401, detail="Token expirado")
+    except jwt.InvalidTokenError:
+        raise HTTPException(status_code=401, detail="Token inválido")

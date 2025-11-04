@@ -16,7 +16,12 @@ class User(Base):
     nome = Column(String(255))
     senha_hash = Column(String(255))  # Hash da senha para autenticação
     
-    # Campo para guardar o token de acesso do Google Calendar
+    # Campos para Google OAuth
+    google_id = Column(String(255), unique=True, nullable=True)  # ID do Google do usuário
+    google_access_token = Column(Text)  # Token de acesso do Google
+    google_refresh_token = Column(Text)  # Token de refresh do Google
+    
+    # Campo para guardar o token de acesso do Google Calendar (legacy - mantido para compatibilidade)
     google_calendar_token = Column(Text)
     
     data_criacao = Column(DateTime, default=datetime.utcnow)
