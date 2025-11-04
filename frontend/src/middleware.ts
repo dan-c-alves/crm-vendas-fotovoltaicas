@@ -1,31 +1,29 @@
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 
-// Páginas protegidas: leads, tarefas, settings, dashboard
-const protectedPrefixes = ['/leads', '/tarefas', '/settings']
+// Rotas que precisam de autenticação (PIN)
+const ROTAS_PROTEGIDAS = ['/leads', '/tarefas', '/dashboard', '/settings']
 
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl
-  const needsAuth = protectedPrefixes.some((p) => pathname.startsWith(p))
-
-  if (!needsAuth) {
-    return NextResponse.next()
+  
+  // Verificar se a rota precisa de proteção
+  const rotaProtegida = ROTAS_PROTEGIDAS.some(rota => pathname.startsWith(rota))
+  
+  if (rotaProtegida) {
+    // Verificar se tem cookie de autenticação simples
+    const authCookie = request.cookies.get('crm_auth')
+    
+    if (!authCookie || authCookie.value !== 'ok') {
+      // Redirecionar para página inicial (tela de PIN)
+      return NextResponse.redirect(new URL('/', request.url))
+    }
   }
-
-  const token = request.cookies.get('app_token')?.value
-  if (!token) {
-    const loginUrl = new URL('/login', request.url)
-    loginUrl.searchParams.set('from', pathname)
-    return NextResponse.redirect(loginUrl)
-  }
-
+  
   return NextResponse.next()
 }
 
+// Configurar quais rotas o middleware deve processar
 export const config = {
-  matcher: [
-    '/leads/:path*',
-    '/tarefas/:path*',
-    '/settings/:path*'
-  ]
+  matcher: ['/leads/:path*', '/tarefas/:path*', '/dashboard/:path*', '/settings/:path*']
 }

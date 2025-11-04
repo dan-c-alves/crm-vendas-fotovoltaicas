@@ -1,169 +1,53 @@
-'use client';
+﻿"use client"
+import { useState } from 'react'
+import { useRouter } from 'next/navigation'
+import toast, { Toaster } from 'react-hot-toast'
 
-import React, { useEffect, useState } from 'react';
-import { Layout, MetricCard, FunnelChart, TrendChart } from '../components';
-import { apiClient } from '../utils/api';
-import { formatCurrency } from '../utils/format';
-import { FiTrendingUp, FiUsers, FiDollarSign, FiAward } from 'react-icons/fi';
-import toast, { Toaster } from 'react-hot-toast';
+const PIN_CORRETO = "1010"
 
-interface Stats {
-  total_leads: number;
-  total_vendas: number;
-  valor_total_vendas: number;
-  valor_total_sem_iva: number;
-  comissao_total: number;
-  taxa_conversao: number;
-  valor_medio_venda: number;
-  comissao_media: number;
-}
+export default function PinPage() {
+  const [pin, setPin] = useState('')
+  const router = useRouter()
 
-export default function Dashboard() {
-  const [stats, setStats] = useState<Stats | null>(null);
-  const [funil, setFunil] = useState<Record<string, number>>({});
-  const [vendas, setVendas] = useState<Record<string, number>>({});
-  const [comissoes, setComissoes] = useState<Record<string, number>>({});
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        setLoading(true);
-        
-        // Buscar dados do dashboard
-        const response = await fetch('/api/leads/analytics/dashboard');
-        if (!response.ok) {
-          throw new Error('Erro ao carregar dados');
-        }
-        
-        const data = await response.json();
-        
-        // Usar os dados corretos da API de analytics
-        setStats({
-          total_leads: data.totalLeads || 0,
-          total_vendas: data.vendasFechadas || 0,
-          valor_total_vendas: data.valorTotalComIva || 0,
-          valor_total_sem_iva: data.valorTotalSemIva || 0,
-          comissao_total: data.comissaoTotal || 0,
-          taxa_conversao: data.taxaConversao || 0,
-          valor_medio_venda: data.valorMedioVenda || 0,
-          comissao_media: data.comissaoMedia || 0
-        });
-        
-        // Configurar dados do funil
-        setFunil(data.leadsPorStatus || {});
-        
-        // Remover dados fictícios - usar apenas dados reais
-        setVendas({});
-        setComissoes({});
-        
-        toast.success('Dados carregados com sucesso!');
-      } catch (error) {
-        console.error('Erro ao carregar dados:', error);
-        toast.error('Erro ao carregar dados do dashboard');
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchData();
-  }, []);
+  const verificarPin = () => {
+    if (pin === PIN_CORRETO) {
+      document.cookie = "crm_auth=ok; path=/; max-age=86400"
+      toast.success('Acesso autorizado!')
+      router.push('/leads')
+    } else {
+      toast.error('PIN incorreto!')
+      setPin('')
+    }
+  }
 
   return (
-    <Layout>
-      <Toaster position="top-right" />
-      
-      <div className="space-y-8">
-        {/* Título */}
-        <div>
-          <h1 className="text-4xl font-bold text-dark-50 mb-2">Dashboard</h1>
-          <p className="text-dark-400">Bem-vindo ao seu CRM de Vendas Fotovoltaicas</p>
-        </div>
-
-        {/* Métricas Principais */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          <MetricCard
-            title="Total de Leads"
-            value={stats?.total_leads || 0}
-            icon={<FiUsers />}
-            color="primary"
-            loading={loading}
-          />
-          <MetricCard
-            title="Vendas Fechadas"
-            value={stats?.total_vendas || 0}
-            icon={<FiTrendingUp />}
-            color="success"
-            loading={loading}
-          />
-          <MetricCard
-            title="Valor Total COM IVA (€)"
-            value={formatCurrency(stats?.valor_total_vendas)}
-            icon={<FiDollarSign />}
-            color="info"
-            loading={loading}
-          />
-          <MetricCard
-            title="Valor Total sem IVA (€)"
-            value={formatCurrency(stats?.valor_total_sem_iva)}
-            icon={<FiDollarSign />}
-            color="warning"
-            loading={loading}
-          />
-        </div>
-
-        {/* Métricas Secundárias */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <div className="card">
-            <h3 className="text-dark-300 text-sm font-medium mb-2">Taxa de Conversão</h3>
-            <p className="text-3xl font-bold text-primary-400">
-              {Number(stats?.taxa_conversao || 0).toFixed(1)}%
-            </p>
+    <div style={{minHeight:'100vh',display:'flex',alignItems:'center',justifyContent:'center',background:'linear-gradient(135deg, #1e293b 0%, #1e40af 50%, #1e293b 100%)'}}>
+      <Toaster />
+      <div style={{background:'rgba(255,255,255,0.1)',backdropFilter:'blur(20px)',borderRadius:'24px',padding:'32px',maxWidth:'400px',width:'100%',border:'1px solid rgba(255,255,255,0.2)'}}>
+        <div style={{textAlign:'center',marginBottom:'32px'}}>
+          <div style={{width:'80px',height:'80px',margin:'0 auto 16px',background:'linear-gradient(135deg, #60a5fa, #2563eb)',borderRadius:'50%',display:'flex',alignItems:'center',justifyContent:'center'}}>
+            <svg style={{width:'40px',height:'40px',color:'white'}} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" /></svg>
           </div>
-          <div className="card">
-            <h3 className="text-dark-300 text-sm font-medium mb-2">Comissão Total (€)</h3>
-            <p className="text-3xl font-bold text-primary-400">
-              {formatCurrency(stats?.comissao_total)}
-            </p>
-          </div>
-          <div className="card">
-            <h3 className="text-dark-300 text-sm font-medium mb-2">Comissão Média</h3>
-            <p className="text-3xl font-bold text-primary-400">
-              {formatCurrency(stats?.comissao_media)}
-            </p>
-          </div>
+          <h1 style={{fontSize:'24px',fontWeight:'bold',color:'white',marginBottom:'8px'}}>CRM Fotovoltaico</h1>
+          <p style={{color:'#93c5fd',fontSize:'14px'}}>Digite seu PIN de acesso</p>
         </div>
-
-        {/* Gráficos */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <FunnelChart data={funil} title="Funil de Vendas" />
-          <TrendChart data={vendas} title="Vendas por Mês" dataKey="Vendas" color="#22c55e" />
-        </div>
-
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <TrendChart data={comissoes} title="Comissões por Mês" dataKey="Comissões" color="#f59e0b" />
-          
-          {/* Informações Rápidas */}
-          <div className="card">
-            <h2 className="text-lg font-bold text-dark-50 mb-4">Informações Rápidas</h2>
-            <div className="space-y-3">
-              <div className="flex justify-between items-center pb-3 border-b border-glass-light">
-                <span className="text-dark-400">Leads Ativos</span>
-                <span className="font-bold text-primary-400">{stats?.total_leads || 0}</span>
-              </div>
-              <div className="flex justify-between items-center pb-3 border-b border-glass-light">
-                <span className="text-dark-400">Taxa de Conversão</span>
-                <span className="font-bold text-primary-400">{Number(stats?.taxa_conversao || 0).toFixed(1)}%</span>
-              </div>
-              <div className="flex justify-between items-center">
-                <span className="text-dark-400">Comissão Total</span>
-                <span className="font-bold text-primary-400">{formatCurrency(stats?.comissao_total)}</span>
-              </div>
+        <div style={{display:'flex',justifyContent:'center',gap:'12px',marginBottom:'32px'}}>
+          {[0,1,2,3].map(i => (
+            <div key={i} style={{width:'56px',height:'56px',borderRadius:'12px',border:'2px solid '+(pin.length > i ? '#60a5fa' : 'rgba(255,255,255,0.2)'),background:pin.length > i ? '#3b82f6' : 'rgba(255,255,255,0.05)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:'24px',fontWeight:'bold',color:'white',transform:pin.length > i ? 'scale(1.1)' : 'scale(1)',transition:'all 0.2s'}}>
+              {pin.length > i ? '' : ''}
             </div>
-          </div>
+          ))}
         </div>
+        <div style={{display:'grid',gridTemplateColumns:'repeat(3, 1fr)',gap:'12px'}}>
+          {['1','2','3','4','5','6','7','8','9'].map(n => (
+            <button key={n} onClick={() => {if(pin.length < 4){const novo = pin + n; setPin(novo); if(novo.length === 4) setTimeout(verificarPin, 100)}}} style={{height:'64px',background:'rgba(255,255,255,0.1)',color:'white',fontSize:'20px',fontWeight:'600',borderRadius:'12px',border:'1px solid rgba(255,255,255,0.1)',cursor:'pointer'}} onMouseEnter={e => e.target.style.background='rgba(255,255,255,0.2)'} onMouseLeave={e => e.target.style.background='rgba(255,255,255,0.1)'}>{n}</button>
+          ))}
+          <button onClick={() => setPin('')} style={{height:'64px',background:'rgba(239,68,68,0.2)',color:'#fca5a5',fontSize:'14px',fontWeight:'600',borderRadius:'12px',border:'1px solid rgba(239,68,68,0.2)',cursor:'pointer'}}>Limpar</button>
+          <button onClick={() => {if(pin.length < 4) setPin(pin + '0')}} style={{height:'64px',background:'rgba(255,255,255,0.1)',color:'white',fontSize:'20px',fontWeight:'600',borderRadius:'12px',border:'1px solid rgba(255,255,255,0.1)',cursor:'pointer'}}>0</button>
+          <button onClick={verificarPin} style={{height:'64px',background:'linear-gradient(135deg, #3b82f6, #2563eb)',color:'white',fontSize:'14px',fontWeight:'600',borderRadius:'12px',border:'none',cursor:'pointer'}}>Entrar</button>
+        </div>
+        <p style={{textAlign:'center',fontSize:'12px',color:'rgba(255,255,255,0.4)',marginTop:'24px'}}>Sistema protegido  Acesso restrito</p>
       </div>
-    </Layout>
-  );
+    </div>
+  )
 }
-
