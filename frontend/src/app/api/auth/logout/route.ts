@@ -1,7 +1,8 @@
 import { NextResponse } from 'next/server'
-import { clearAuthCookie } from '../utils'
 
+// Rota descontinuada: sessão é gerida pelo backend OAuth/JWT.
 export async function POST() {
-  clearAuthCookie()
-  return NextResponse.json({ ok: true })
+  return NextResponse.json({
+    error: 'Rota descontinuada. Use o logout via backend se aplicável.'
+  }, { status: 410 })
 }

@@ -1,11 +1,8 @@
 import { NextResponse } from 'next/server'
-import { getTokenFromCookie, verifyToken } from '../utils'
 
+// Rota descontinuada: utilize o endpoint equivalente no backend se necessário.
 export async function GET() {
-  const token = getTokenFromCookie()
-  const payload = verifyToken(token || undefined)
-  if (!payload) {
-    return NextResponse.json({ authenticated: false }, { status: 200 })
-  }
-  return NextResponse.json({ authenticated: true, user: payload }, { status: 200 })
+  return NextResponse.json({
+    error: 'Rota descontinuada. Consulte /api/auth/me no backend.'
+  }, { status: 410 })
 }

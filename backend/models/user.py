@@ -15,7 +15,7 @@ class User(Base):
     id: int = Column(Integer, primary_key=True, index=True)  # type: ignore
     email: str = Column(String(255), unique=True, nullable=False)  # type: ignore
     nome: Optional[str] = Column(String(255))  # type: ignore
-    senha_hash: Optional[str] = Column(String(255))  # type: ignore
+    password_hash: Optional[str] = Column(String(255))  # type: ignore
     
     # Campos para Google OAuth
     google_id: Optional[str] = Column(String(255), unique=True, nullable=True)  # type: ignore
@@ -30,13 +30,13 @@ class User(Base):
 
     def set_password(self, password: str):
         """Define a senha do usuário (cria o hash)"""
-        self.senha_hash = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
+        self.password_hash = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
     
     def check_password(self, password: str) -> bool:
         """Verifica se a senha está correta"""
-        if not self.senha_hash:
+        if not self.password_hash:
             return False
-        return bcrypt.checkpw(password.encode('utf-8'), self.senha_hash.encode('utf-8'))
+        return bcrypt.checkpw(password.encode('utf-8'), self.password_hash.encode('utf-8'))
 
     def __repr__(self):
         return f"<User {self.id}: {self.email}>"

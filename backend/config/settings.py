@@ -2,8 +2,12 @@
 
 import os
 from pathlib import Path
+from dotenv import load_dotenv
 
 BASE_DIR = Path(__file__).resolve().parent.parent
+
+# Carregar variáveis do arquivo .env
+load_dotenv(BASE_DIR / '.env')
 
 # Configurações de segurança
 SECRET_KEY = os.getenv("SECRET_KEY", "sua-chave-secreta-aqui-mude-em-producao")
@@ -11,16 +15,20 @@ DEBUG = os.getenv("DEBUG", "True").lower() == "true"
 
 # Configurações da Base de Dados
 # PostgreSQL do Railway (interno) ou Supabase (público)
-DATABASE_URL = os.getenv("DATABASE_URL", "postgresql://postgres:wSWYpISACPeNCDjTwuiYcuCsQUQFWxRe@postgres.railway.internal:5432/railway")
+DATABASE_URL = os.getenv("DATABASE_URL")
+
+if not DATABASE_URL:
+	raise ValueError("DATABASE_URL não está definida no arquivo .env")
 
 # Configurações de CORS
 ALLOWED_ORIGINS = os.getenv(
-	"ALLOWED_ORIGINS",
-	"http://localhost:3000,http://127.0.0.1:3000,https://insightful-light-production.up.railway.app"
+    "ALLOWED_ORIGINS",
+    "http://localhost:3000,http://127.0.0.1:3000,https://insightful-light-production.up.railway.app"
 ).split(',')
 # Regex opcional para permitir domínios dinâmicos (ex.: qualquer subdomínio do Railway)
 # Exemplo de uso em produção temporária: ALLOWED_ORIGIN_REGEX="^https://.*\\.railway\\.app$"
-ALLOWED_ORIGIN_REGEX = os.getenv("ALLOWED_ORIGIN_REGEX")  # None por padrão se não definido
+# Permitir por padrão qualquer subdomínio do Railway (pode ser sobrescrito por variável de ambiente)
+ALLOWED_ORIGIN_REGEX = os.getenv("ALLOWED_ORIGIN_REGEX", r"^https://.*\.railway\.app$")
 
 # --- CONFIGURAÇÕES DE NEGÓCIO ---
 COMISSAO_PERCENTAGEM = float(os.getenv("COMISSAO_PERCENTAGEM", "0.05"))  # 5%

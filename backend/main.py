@@ -15,6 +15,8 @@ from config.settings import ALLOWED_ORIGINS, ALLOWED_ORIGIN_REGEX
 
 print("🚀 Iniciando CRM API...")
 print(f"DATABASE_URL: {os.getenv('DATABASE_URL', 'NÃO CONFIGURADO')[:50]}...")
+print(f"CORS allow_origins: {ALLOWED_ORIGINS}")
+print(f"CORS allow_origin_regex: {ALLOWED_ORIGIN_REGEX}")
 
 # Inicializar a base de dados
 init_db()
