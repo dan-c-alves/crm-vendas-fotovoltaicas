@@ -76,7 +76,7 @@ def get_google_oauth_flow(redirect_uri: str):
 def register(data: RegisterRequest, db: Session = Depends(get_db)):
     """Registra um novo usuário"""
     # Verifica se o email já existe
-    existing = db.query(UserModel).filter(UserModel.email == data.email).first()
+    existing = db.query(UserModel).filter(UserModel.email == data.email).first()  # type: ignore
     if existing:
         raise HTTPException(status_code=400, detail="Email já registrado")
     
@@ -110,7 +110,7 @@ def register(data: RegisterRequest, db: Session = Depends(get_db)):
 @router.post("/login", response_model=TokenResponse)
 def login(data: LoginRequest, db: Session = Depends(get_db)):
     """Faz login do usuário"""
-    user = db.query(UserModel).filter(UserModel.email == data.email).first()
+    user = db.query(UserModel).filter(UserModel.email == data.email).first()  # type: ignore
     
     if not user or not user.check_password(data.password):
         raise HTTPException(status_code=401, detail="Email ou senha incorretos")
@@ -128,7 +128,7 @@ def login(data: LoginRequest, db: Session = Depends(get_db)):
     }
 
 @router.get("/google/login")
-def google_login(redirect_uri: str = None):
+def google_login(redirect_uri: str | None = None):
     """
     Inicia o fluxo de autenticação do Google.
     """
@@ -146,7 +146,7 @@ def google_login(redirect_uri: str = None):
     return {"authorization_url": authorization_url}
 
 @router.get("/google/callback")
-def google_callback(code: str, state: str = None, db: Session = Depends(get_db)):
+def google_callback(code: str, state: str | None = None, db: Session = Depends(get_db)):
     """
     Recebe o código de autorização do Google e autentica o usuário.
     """
@@ -174,7 +174,7 @@ def google_callback(code: str, state: str = None, db: Session = Depends(get_db))
             return RedirectResponse(f"{frontend_url}/?error=unauthorized")
         
         # Buscar ou criar usuário
-        user = db.query(UserModel).filter(UserModel.email == email).first()
+        user = db.query(UserModel).filter(UserModel.email == email).first()  # type: ignore
         
         if not user:
             user = UserModel(
@@ -188,9 +188,9 @@ def google_callback(code: str, state: str = None, db: Session = Depends(get_db))
             user.google_id = google_id
         
         # Salvar tokens do Google
-        user.google_access_token = credentials.token
-        user.google_refresh_token = credentials.refresh_token if credentials.refresh_token else user.google_refresh_token
-        user.google_calendar_token = credentials.token  # Compatibilidade com Calendar
+        user.google_access_token = str(credentials.token) if credentials.token else None
+        user.google_refresh_token = str(credentials.refresh_token) if credentials.refresh_token else user.google_refresh_token
+        user.google_calendar_token = str(credentials.token) if credentials.token else None  # Compatibilidade com Calendar
         
         db.commit()
         db.refresh(user)
@@ -221,7 +221,7 @@ def get_current_user(token: str, db: Session = Depends(get_db)):
         payload = jwt.decode(token, SECRET_KEY, algorithms=["HS256"])
         user_id = payload.get("id")
         
-        user = db.query(UserModel).filter(UserModel.id == user_id).first()
+        user = db.query(UserModel).filter(UserModel.id == user_id).first()  # type: ignore
         if not user:
             raise HTTPException(status_code=404, detail="Usuário não encontrado")
         

@@ -3,6 +3,7 @@
 from sqlalchemy import Column, Integer, String, DateTime, Text
 from sqlalchemy.ext.declarative import declarative_base
 from datetime import datetime
+from typing import Optional
 import bcrypt
 
 Base = declarative_base()
@@ -11,21 +12,21 @@ class User(Base):
     """Modelo de Utilizador (para guardar o token do Google)"""
     __tablename__ = "users"
 
-    id = Column(Integer, primary_key=True, index=True)
-    email = Column(String(255), unique=True, nullable=False)
-    nome = Column(String(255))
-    senha_hash = Column(String(255))  # Hash da senha para autenticação
+    id: int = Column(Integer, primary_key=True, index=True)  # type: ignore
+    email: str = Column(String(255), unique=True, nullable=False)  # type: ignore
+    nome: Optional[str] = Column(String(255))  # type: ignore
+    senha_hash: Optional[str] = Column(String(255))  # type: ignore
     
     # Campos para Google OAuth
-    google_id = Column(String(255), unique=True, nullable=True)  # ID do Google do usuário
-    google_access_token = Column(Text)  # Token de acesso do Google
-    google_refresh_token = Column(Text)  # Token de refresh do Google
+    google_id: Optional[str] = Column(String(255), unique=True, nullable=True)  # type: ignore
+    google_access_token: Optional[str] = Column(Text)  # type: ignore
+    google_refresh_token: Optional[str] = Column(Text)  # type: ignore
     
     # Campo para guardar o token de acesso do Google Calendar (legacy - mantido para compatibilidade)
-    google_calendar_token = Column(Text)
+    google_calendar_token: Optional[str] = Column(Text)  # type: ignore
     
-    data_criacao = Column(DateTime, default=datetime.utcnow)
-    data_atualizacao = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    data_criacao: datetime = Column(DateTime, default=datetime.utcnow)  # type: ignore
+    data_atualizacao: datetime = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)  # type: ignore
 
     def set_password(self, password: str):
         """Define a senha do usuário (cria o hash)"""
