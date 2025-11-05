@@ -6,8 +6,9 @@ import os
 # Carregar variáveis de ambiente do .env
 load_dotenv()
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
+from starlette.middleware.base import BaseHTTPMiddleware
 from app.database import init_db
 from routes import leads, auth, upload
 from routes import calendar as calendar_routes
@@ -28,7 +29,47 @@ app = FastAPI(
     version="1.0.0",
 )
 
-# Configurar CORS
+# Middleware customizado para FORÇAR CORS correto (sobrescreve headers do Railway)
+class ForceCORSMiddleware(BaseHTTPMiddleware):
+    async def dispatch(self, request: Request, call_next):
+        response = await call_next(request)
+        
+        # Pegar a origem da requisição
+        origin = request.headers.get("origin")
+        
+        # Verificar se a origem está na lista permitida
+        if origin:
+            # Verificar se está na lista exata ou se bate com o regex
+            allowed = False
+            
+            # Check exact match
+            if origin in ALLOWED_ORIGINS:
+                allowed = True
+            
+            # Check regex match (qualquer .railway.app)
+            if not allowed and ALLOWED_ORIGIN_REGEX:
+                import re
+                if re.match(ALLOWED_ORIGIN_REGEX, origin):
+                    allowed = True
+            
+            if allowed:
+                # FORÇAR headers CORS corretos (sobrescreve qualquer header do Railway)
+                response.headers["Access-Control-Allow-Origin"] = origin
+                response.headers["Access-Control-Allow-Credentials"] = "true"
+                response.headers["Access-Control-Allow-Methods"] = "GET, POST, PUT, DELETE, OPTIONS, PATCH"
+                response.headers["Access-Control-Allow-Headers"] = "Content-Type, Authorization, Accept, Origin, X-Requested-With"
+                response.headers["Access-Control-Max-Age"] = "3600"
+                
+                print(f"✅ CORS permitido para: {origin}")
+            else:
+                print(f"⚠️  CORS bloqueado para: {origin}")
+        
+        return response
+
+# Adicionar middleware customizado PRIMEIRO (para sobrescrever Railway)
+app.add_middleware(ForceCORSMiddleware)
+
+# Configurar CORS padrão do FastAPI (backup)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=ALLOWED_ORIGINS,
@@ -52,6 +93,33 @@ def read_root():
 @app.get("/health")
 def healthcheck():
     return {"status": "ok"}
+
+# Handler global para OPTIONS (preflight CORS)
+@app.options("/{full_path:path}")
+async def options_handler(request: Request):
+    """Handler para requisições OPTIONS (CORS preflight)"""
+    origin = request.headers.get("origin", "")
+    
+    # Verificar se origem é permitida
+    allowed = origin in ALLOWED_ORIGINS
+    
+    if not allowed and ALLOWED_ORIGIN_REGEX:
+        import re
+        allowed = bool(re.match(ALLOWED_ORIGIN_REGEX, origin))
+    
+    if allowed:
+        return Response(
+            status_code=200,
+            headers={
+                "Access-Control-Allow-Origin": origin,
+                "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS, PATCH",
+                "Access-Control-Allow-Headers": "Content-Type, Authorization, Accept, Origin, X-Requested-With",
+                "Access-Control-Allow-Credentials": "true",
+                "Access-Control-Max-Age": "3600",
+            }
+        )
+    
+    return Response(status_code=403)
 
 if __name__ == "__main__":
     import uvicorn
