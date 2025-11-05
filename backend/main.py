@@ -32,38 +32,52 @@ app = FastAPI(
 # Middleware customizado para FORÇAR CORS correto (sobrescreve headers do Railway)
 class ForceCORSMiddleware(BaseHTTPMiddleware):
     async def dispatch(self, request: Request, call_next):
-        response = await call_next(request)
-        
-        # Pegar a origem da requisição
-        origin = request.headers.get("origin")
-        
+        origin = request.headers.get("origin", "")
+
         # Verificar se a origem está na lista permitida
+        allowed = False
         if origin:
-            # Verificar se está na lista exata ou se bate com o regex
-            allowed = False
-            
             # Check exact match
             if origin in ALLOWED_ORIGINS:
                 allowed = True
-            
             # Check regex match (qualquer .railway.app)
             if not allowed and ALLOWED_ORIGIN_REGEX:
                 import re
                 if re.match(ALLOWED_ORIGIN_REGEX, origin):
                     allowed = True
-            
+
+        # Tratar preflight OPTIONS imediatamente (antes de atingir handlers)
+        if request.method == "OPTIONS":
             if allowed:
-                # FORÇAR headers CORS corretos (sobrescreve qualquer header do Railway)
-                response.headers["Access-Control-Allow-Origin"] = origin
-                response.headers["Access-Control-Allow-Credentials"] = "true"
-                response.headers["Access-Control-Allow-Methods"] = "GET, POST, PUT, DELETE, OPTIONS, PATCH"
-                response.headers["Access-Control-Allow-Headers"] = "Content-Type, Authorization, Accept, Origin, X-Requested-With"
-                response.headers["Access-Control-Max-Age"] = "3600"
-                
-                print(f"✅ CORS permitido para: {origin}")
-            else:
+                print(f"✅ CORS (preflight) permitido para: {origin}")
+                return Response(
+                    status_code=200,
+                    headers={
+                        "Access-Control-Allow-Origin": origin,
+                        "Access-Control-Allow-Credentials": "true",
+                        "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS, PATCH",
+                        "Access-Control-Allow-Headers": "Content-Type, Authorization, Accept, Origin, X-Requested-With",
+                        "Access-Control-Max-Age": "3600",
+                    },
+                )
+            print(f"⚠️  CORS (preflight) bloqueado para: {origin}")
+            return Response(status_code=403)
+
+        # Requisições normais seguem para o próximo handler
+        response = await call_next(request)
+
+        # FORÇAR headers CORS corretos (sobrescreve qualquer header do Railway)
+        if allowed:
+            response.headers["Access-Control-Allow-Origin"] = origin
+            response.headers["Access-Control-Allow-Credentials"] = "true"
+            response.headers["Access-Control-Allow-Methods"] = "GET, POST, PUT, DELETE, OPTIONS, PATCH"
+            response.headers["Access-Control-Allow-Headers"] = "Content-Type, Authorization, Accept, Origin, X-Requested-With"
+            response.headers["Access-Control-Max-Age"] = "3600"
+            print(f"✅ CORS permitido para: {origin}")
+        else:
+            if origin:
                 print(f"⚠️  CORS bloqueado para: {origin}")
-        
+
         return response
 
 # Adicionar middleware customizado PRIMEIRO (para sobrescrever Railway)
