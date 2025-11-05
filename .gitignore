@@ -47,6 +47,9 @@ htmlcov/
 .env.local
 .env.*.local
 
+# Deployment credentials (local only)
+CREDENCIAIS_DEPLOY.txt
+
 # Database
 *.db
 *.sqlite
