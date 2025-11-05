@@ -17,6 +17,7 @@ print("🚀 Iniciando CRM API...")
 print(f"DATABASE_URL: {os.getenv('DATABASE_URL', 'NÃO CONFIGURADO')[:50]}...")
 print(f"CORS allow_origins: {ALLOWED_ORIGINS}")
 print(f"CORS allow_origin_regex: {ALLOWED_ORIGIN_REGEX}")
+print(f"⚠️  IMPORTANTE: Certifique-se de que o frontend está em ALLOWED_ORIGINS!")
 
 # Inicializar a base de dados
 init_db()
