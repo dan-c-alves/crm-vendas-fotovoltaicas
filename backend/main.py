@@ -16,9 +16,9 @@ print(f"DATABASE_URL: {os.getenv('DATABASE_URL', 'NÃO CONFIGURADO')[:50]}...")
 
 # Configurar CORS com as origens explícitas
 ALLOWED_ORIGINS = [
-    "https://insightful-light-production.up.railway.app",
-    "http://localhost:3000",
-    "https://1b619e43-b2e8-434d-ba34-b246a8074d20.railway.app",
+    "https://insightful-light-production.up.railway.app",  # Frontend
+    "http://localhost:3000",  # Dev local
+    "https://crm-vendas-fotovoltaicas-production.up.railway.app",  # Backend
 ]
 
 # Middleware que GARANTE headers CORS corretos sobrescrevendo qualquer outro
