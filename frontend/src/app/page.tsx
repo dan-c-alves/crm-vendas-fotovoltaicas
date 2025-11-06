@@ -6,7 +6,7 @@ import toast, { Toaster } from 'react-hot-toast'
 // Detectar URL da API automaticamente
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 
   (typeof window !== 'undefined' && window.location.hostname.includes('railway.app')
-    ? 'https://1b619e43-b2e8-434d-ba34-b246a8074d20.railway.app'
+    ? 'https://crm-vendas-fotovoltaicas-production.up.railway.app'
     : 'http://localhost:8000')
 
 function LoginContent() {
