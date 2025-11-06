@@ -17,7 +17,7 @@ export default function Sidebar({ isOpen, onToggle }: SidebarProps) {
   const { taskStats } = useTaskUpdates();
 
   const menuItems = [
-    { name: 'Dashboard', href: '/', icon: FiHome },
+    { name: 'Dashboard', href: '/dashboard', icon: FiHome },
     { name: 'Leads', href: '/leads', icon: FiUsers },
     { 
       name: 'Tarefas', 

@@ -30,8 +30,8 @@ function LoginContent() {
       document.cookie = `auth_token=${tokenFromUrl}; path=/; max-age=${30 * 24 * 60 * 60}; SameSite=Lax`
       
       toast.success('Login realizado com sucesso!')
-      // Redirecionar imediatamente sem setTimeout
-      router.push('/leads')
+      // Redirecionar para dashboard
+      router.push('/dashboard')
       return
     }
     
@@ -50,7 +50,7 @@ function LoginContent() {
     if (existingToken) {
       // Garantir que o token também está nos cookies
       document.cookie = `auth_token=${existingToken}; path=/; max-age=${30 * 24 * 60 * 60}; SameSite=Lax`
-      router.push('/leads')
+      router.push('/dashboard')
       return
     }
   }, [searchParams, router])
