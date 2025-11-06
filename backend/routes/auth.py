@@ -1,7 +1,7 @@
 # backend/routes/auth.py
 
 from fastapi import APIRouter, Depends, HTTPException
-from fastapi.responses import RedirectResponse, JSONResponse
+from fastapi.responses import RedirectResponse, JSONResponse # JSONResponse é importante
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import IntegrityError
 from google_auth_oauthlib.flow import Flow
@@ -70,7 +70,7 @@ def get_google_oauth_flow(redirect_uri: str):
             "https://www.googleapis.com/auth/calendar.events"
         ],
         redirect_uri=redirect_uri
-    )
+     )
 
 @router.post("/register", response_model=TokenResponse)
 def register(data: RegisterRequest, db: Session = Depends(get_db)):
@@ -134,7 +134,7 @@ def google_login(redirect_uri: str | None = None):
     """
     # Determinar redirect_uri baseado no ambiente
     if not redirect_uri:
-        redirect_uri = os.getenv("GOOGLE_REDIRECT_URI", "http://localhost:8000/api/auth/google/callback")
+        redirect_uri = os.getenv("GOOGLE_REDIRECT_URI", "http://localhost:8000/api/auth/google/callback" )
     
     flow = get_google_oauth_flow(redirect_uri)
     authorization_url, state = flow.authorization_url(
@@ -143,16 +143,26 @@ def google_login(redirect_uri: str | None = None):
         prompt='consent'  # Força mostrar tela de consentimento
     )
     
-    return {"authorization_url": authorization_url}
+    # ----------------------------------------------------------------
+    # CORREÇÃO DE CORS FORÇADA AQUI
+    # ----------------------------------------------------------------
+    response = JSONResponse({"authorization_url": authorization_url})
+    
+    # Adicionar o cabeçalho de CORS correto
+    response.headers["Access-Control-Allow-Origin"] = "https://insightful-light-production.up.railway.app"
+    response.headers["Access-Control-Allow-Credentials"] = "true"
+    
+    return response
+    # ----------------------------------------------------------------
 
-@router.get("/google/callback")
+@router.get("/google/callback" )
 def google_callback(code: str, state: str | None = None, db: Session = Depends(get_db)):
     """
     Recebe o código de autorização do Google e autentica o usuário.
     """
     try:
         # Determinar redirect_uri
-        redirect_uri = os.getenv("GOOGLE_REDIRECT_URI", "http://localhost:8000/api/auth/google/callback")
+        redirect_uri = os.getenv("GOOGLE_REDIRECT_URI", "http://localhost:8000/api/auth/google/callback" )
         flow = get_google_oauth_flow(redirect_uri)
         
         # Trocar código por token
@@ -170,7 +180,7 @@ def google_callback(code: str, state: str | None = None, db: Session = Depends(g
         
         # Verificar se o email é autorizado
         if email != ALLOWED_EMAIL:
-            frontend_url = os.getenv("FRONTEND_URL", "http://localhost:3000")
+            frontend_url = os.getenv("FRONTEND_URL", "http://localhost:3000" )
             return RedirectResponse(f"{frontend_url}/?error=unauthorized")
         
         # Buscar ou criar usuário
@@ -204,12 +214,12 @@ def google_callback(code: str, state: str | None = None, db: Session = Depends(g
         }, remember_me=True)
         
         # Redirecionar para frontend com token
-        frontend_url = os.getenv("FRONTEND_URL", "http://localhost:3000")
+        frontend_url = os.getenv("FRONTEND_URL", "http://localhost:3000" )
         return RedirectResponse(f"{frontend_url}/?token={token}")
         
     except Exception as e:
         print(f"Erro no callback do Google: {e}")
-        frontend_url = os.getenv("FRONTEND_URL", "http://localhost:3000")
+        frontend_url = os.getenv("FRONTEND_URL", "http://localhost:3000" )
         return RedirectResponse(f"{frontend_url}/?error=auth_failed")
 
 @router.get("/me")
