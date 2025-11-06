@@ -131,6 +131,7 @@ def login(data: LoginRequest, db: Session = Depends(get_db)):
 def google_login(redirect_uri: str | None = None):
     """
     Inicia o fluxo de autenticação do Google.
+    Redireciona diretamente para a página de autorização do Google.
     """
     # Determinar redirect_uri baseado no ambiente
     if not redirect_uri:
@@ -143,17 +144,8 @@ def google_login(redirect_uri: str | None = None):
         prompt='consent'  # Força mostrar tela de consentimento
     )
     
-    # ----------------------------------------------------------------
-    # CORREÇÃO DE CORS FORÇADA AQUI
-    # ----------------------------------------------------------------
-    response = JSONResponse({"authorization_url": authorization_url})
-    
-    # Adicionar o cabeçalho de CORS correto
-    response.headers["Access-Control-Allow-Origin"] = "https://insightful-light-production.up.railway.app"
-    response.headers["Access-Control-Allow-Credentials"] = "true"
-    
-    return response
-    # ----------------------------------------------------------------
+    # Fazer redirect direto para o Google
+    return RedirectResponse(authorization_url)
 
 @router.get("/google/callback" )
 def google_callback(code: str, state: str | None = None, db: Session = Depends(get_db)):
@@ -277,3 +269,25 @@ def get_calendar_status(db: Session = Depends(get_db)):
             "connected": False,
             "message": "Erro ao verificar status"
         }
+
+@router.get("/google/test-config")
+def test_google_config():
+    """
+    Testa a configuração do Google OAuth.
+    Retorna as configurações atuais (sem expor secrets).
+    """
+    redirect_uri = os.getenv("GOOGLE_REDIRECT_URI", "http://localhost:8000/api/auth/google/callback")
+    frontend_url = os.getenv("FRONTEND_URL", "http://localhost:3000")
+    
+    return {
+        "google_client_id": GOOGLE_CLIENT_ID[:20] + "..." if GOOGLE_CLIENT_ID else "NOT SET",
+        "google_client_secret": "SET" if GOOGLE_CLIENT_SECRET else "NOT SET",
+        "redirect_uri": redirect_uri,
+        "frontend_url": frontend_url,
+        "scopes": [
+            "openid",
+            "userinfo.email",
+            "userinfo.profile",
+            "calendar.events"
+        ]
+    }
