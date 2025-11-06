@@ -9,6 +9,8 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL ||
     ? 'https://crm-vendas-fotovoltaicas-production.up.railway.app'
     : 'http://localhost:8000')
 
+console.log('🔧 API URL configured:', API_URL)
+
 function LoginContent() {
   const [rememberMe, setRememberMe] = useState(true)
   const [loading, setLoading] = useState(false)
