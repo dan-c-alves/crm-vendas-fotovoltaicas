@@ -34,6 +34,7 @@ Objetivo: tornar um agente de código produtivo rapidamente neste repositório.
   - Alterações ao cálculo de comissão devem atualizar `utils/calculators.py` e a utilização em `routes/leads.py` para manter consistência.
   - Ao mexer na integração Google Calendar, teste com o utilizador padrão (id=1) ou atualize a lógica de lookup de token.
   - Evite mudanças que assumam que `proxima_acao` é timezone-aware; o código atual armazena sem tz.
+  - **Google OAuth**: Client ID e Secret devem estar nas variáveis de ambiente do Railway. URIs de redirect: `https://crm-vendas-fotovoltaicas-production.up.railway.app/api/auth/google/callback`. Ver `GOOGLE_CLOUD_SETUP.md` para configuração completa.
 
 - Arquivos que exemplificam padrões importantes:
   - `backend/routes/leads.py` — lógica de negócio + integração externa (Google Calendar)
