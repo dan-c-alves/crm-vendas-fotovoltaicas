@@ -18,6 +18,8 @@ export default function SettingsPage() {
     idioma: 'pt-PT',
   });
   const [authStatus, setAuthStatus] = useState<'pending' | 'success' | 'failure'>('pending');
+  const [calendarConnected, setCalendarConnected] = useState(false);
+  const [calendarEmail, setCalendarEmail] = useState<string | null>(null);
   const [newPassword, setNewPassword] = useState('');
   const [changing, setChanging] = useState(false);
 
@@ -28,6 +30,8 @@ export default function SettingsPage() {
     if (status === 'success') {
       setAuthStatus('success');
       toast.success('Google Calendar conectado com sucesso!');
+      // Recarregar status após 1 segundo
+      setTimeout(checkCalendarStatus, 1000);
     } else if (status === 'failure') {
       setAuthStatus('failure');
       toast.error('Falha na conexão com o Google Calendar.');
@@ -41,7 +45,27 @@ export default function SettingsPage() {
         setSettings((prev) => ({ ...prev, ...saved }));
       }
     } catch {}
+
+    // Verificar status do Google Calendar
+    checkCalendarStatus();
   }, []);
+
+  const checkCalendarStatus = async () => {
+    try {
+      const backendUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+      const res = await fetch(`${backendUrl}/api/auth/calendar/status`);
+      const data = await res.json();
+      
+      setCalendarConnected(data.connected);
+      setCalendarEmail(data.email);
+      
+      if (data.connected && authStatus === 'pending') {
+        setAuthStatus('success');
+      }
+    } catch (error) {
+      console.error('Erro ao verificar status do calendar:', error);
+    }
+  };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value, type } = e.target;
@@ -109,20 +133,46 @@ export default function SettingsPage() {
           <div className="space-y-4">
             <p className="text-dark-400">
               Conecte a sua conta Google para agendar automaticamente follow-ups no seu calendário pessoal.
+              Todas as tarefas com data definida serão sincronizadas com o Google Calendar.
             </p>
             
-            {authStatus === 'success' ? (
-                <div className="flex items-center gap-2 text-green-400 font-medium p-3 rounded-lg bg-green-900/20 border border-green-400/30">
-                    <FiCheckCircle size={20} />
-                    <span>Conectado! O seu CRM está a agendar eventos no seu calendário.</span>
+            {calendarConnected ? (
+                <div className="space-y-3">
+                  <div className="flex items-center gap-2 text-green-400 font-medium p-3 rounded-lg bg-green-900/20 border border-green-400/30">
+                      <FiCheckCircle size={20} />
+                      <div>
+                        <span className="block">Conectado com sucesso!</span>
+                        {calendarEmail && (
+                          <span className="text-sm text-green-300">Email: {calendarEmail}</span>
+                        )}
+                      </div>
+                  </div>
+                  <div className="text-sm text-dark-400 space-y-2">
+                    <p>✅ As tarefas criadas na página "Tarefas" serão automaticamente adicionadas ao seu Google Calendar</p>
+                    <p>✅ Você receberá lembretes no seu telemóvel (10 minutos antes) e por email (1 dia antes)</p>
+                    <p>✅ Se alterar ou remover uma tarefa, o evento no calendário será atualizado automaticamente</p>
+                  </div>
+                  <button 
+                    onClick={handleConnectGoogle} 
+                    className="btn btn-secondary flex items-center gap-2"
+                  >
+                    <FiCalendar size={20} />
+                    Reconectar Google Calendar
+                  </button>
                 </div>
              ) : authStatus === 'failure' ? (
-                <div className="flex items-center gap-2 text-red-400 font-medium p-3 rounded-lg bg-red-900/20 border border-red-400/30">
-                    <FiAlertTriangle size={20} />
-                    <span>Falha na conexão. Tente novamente ou verifique as permissões.</span>
+                <div className="space-y-3">
+                  <div className="flex items-center gap-2 text-red-400 font-medium p-3 rounded-lg bg-red-900/20 border border-red-400/30">
+                      <FiAlertTriangle size={20} />
+                      <span>Falha na conexão. Tente novamente ou verifique as permissões.</span>
+                  </div>
+                  <button onClick={handleConnectGoogle} className="btn btn-primary flex items-center gap-2">
+                      <FiCalendar size={20} />
+                      Tentar Novamente
+                  </button>
                 </div>
             ) : (
-                <button onClick={handleConnectGoogle} className="btn btn-secondary flex items-center gap-2">
+                <button onClick={handleConnectGoogle} className="btn btn-primary flex items-center gap-2">
                     <FiCalendar size={20} />
                     Conectar Google Calendar
                 </button>

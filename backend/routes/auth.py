@@ -245,3 +245,35 @@ def get_current_user(token: str, db: Session = Depends(get_db)):
         raise HTTPException(status_code=401, detail="Token expirado")
     except jwt.InvalidTokenError:
         raise HTTPException(status_code=401, detail="Token inválido")
+
+@router.get("/calendar/status")
+def get_calendar_status(db: Session = Depends(get_db)):
+    """
+    Verifica se o Google Calendar está conectado.
+    Retorna o status da conexão.
+    """
+    try:
+        # Buscar usuário padrão (id=1)
+        user = db.query(UserModel).filter(UserModel.id == 1).first()  # type: ignore
+        
+        if not user:
+            return {
+                "connected": False,
+                "message": "Usuário não encontrado"
+            }
+        
+        # Verificar se tem token válido
+        has_token = bool(user.google_calendar_token or user.google_access_token)
+        
+        return {
+            "connected": has_token,
+            "email": user.email if has_token else None,
+            "message": "Google Calendar conectado" if has_token else "Google Calendar não conectado"
+        }
+        
+    except Exception as e:
+        print(f"Erro ao verificar status do Calendar: {e}")
+        return {
+            "connected": False,
+            "message": "Erro ao verificar status"
+        }
