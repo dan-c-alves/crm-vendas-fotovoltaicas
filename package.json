@@ -1,4 +1,5 @@
 {
+  "$schema": "https://json.schemastore.org/package",
   "name": "crm-vendas-fotovoltaicas",
   "version": "1.0.0",
   "description": "CRM de Vendas Fotovoltaicas com Next.js, React e Glassmorphism",

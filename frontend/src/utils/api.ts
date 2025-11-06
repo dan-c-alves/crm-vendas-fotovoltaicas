@@ -74,8 +74,22 @@ const apiClient = {
   },
 
   // Analytics
-  async getDashboardStats(): Promise<any> {
-    const response = await fetch(`/api/leads/analytics/dashboard`);
+  async getDashboardStats(params?: Record<string, string | number | string[]>): Promise<any> {
+    let qs = '';
+    if (params) {
+      const search = new URLSearchParams();
+      Object.entries(params).forEach(([k, v]) => {
+        if (v === undefined || v === null) return;
+        if (Array.isArray(v)) {
+          if (v.length) search.set(k, v.join(','));
+        } else {
+          search.set(k, String(v));
+        }
+      });
+      const str = search.toString();
+      qs = str ? '?' + str : '';
+    }
+    const response = await fetch(`/api/leads/analytics/dashboard${qs}`);
     if (!response.ok) throw new Error('Erro ao buscar estatísticas');
     return response.json();
   },

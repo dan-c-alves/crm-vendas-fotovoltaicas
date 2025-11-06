@@ -37,6 +37,7 @@ export interface Lead {
   data_atualizacao?: string
   created_at?: string
   updated_at?: string
+  tarefa_concluida?: boolean
 }
 
 // LISTA DE STATUS VÁLIDOS
@@ -74,14 +75,14 @@ export function validarOrigem(origem: string): boolean {
 }
 
 // ✅ FUNÇÃO PARA CALCULAR VALORES APENAS PARA STATUS "GANHO"
-export function calcularValoresParaGanho(valorComIva: number): { 
+export function calcularValoresParaGanho(valorComIva: number, opts?: { taxaIva?: number; comissaoPercent?: number }): { 
   valorSemIva: number; 
   comissaoValor: number;
   valorIva: number;
 } {
   const valorComIvaNum = Number(valorComIva) || 0;
-  const taxaIva = 0.23; // 23%
-  const percentualComissao = 0.05; // 5%
+  const taxaIva = opts?.taxaIva ?? 0.23; // 23%
+  const percentualComissao = opts?.comissaoPercent ?? 0.05; // 5%
   
   const valorSemIva = valorComIvaNum / (1 + taxaIva);
   const valorIva = valorComIvaNum - valorSemIva;
@@ -111,7 +112,13 @@ export async function getLeadsComProximaAcao() {
 }
 
 // ✅ FUNÇÃO PARA BUSCAR ESTATÍSTICAS DO DASHBOARD
-export async function getDashboardStats() {
+export async function getDashboardStats(options?: {
+  start?: string; // yyyy-mm-dd
+  end?: string;   // yyyy-mm-dd
+  groupBy?: 'month' | 'day' | 'quarter';
+  statusFilter?: string[];
+  originFilter?: string[];
+}) {
   // Buscar todos os leads
   const { data: leads, error } = await supabase
     .from('leads')
@@ -124,10 +131,34 @@ export async function getDashboardStats() {
 
   if (!leads) return null;
 
-  const totalLeads = leads.length;
+  // Aplicar filtros em memória (dataset pequeno)
+  const startDate = options?.start ? new Date(options.start + 'T00:00:00') : null;
+  const endDate = options?.end ? new Date(options.end + 'T23:59:59') : null;
+  const groupBy = options?.groupBy || 'month';
+
+  const filteredLeads = leads.filter((lead) => {
+    // Filtro por período baseado em data_entrada (entrada do lead)
+    const entrada = lead.data_entrada ? new Date(lead.data_entrada) : null;
+    if (startDate && entrada && entrada < startDate) return false;
+    if (endDate && entrada && entrada > endDate) return false;
+
+    // Filtro por status
+    if (options?.statusFilter && options.statusFilter.length > 0) {
+      if (!lead.status || !options.statusFilter.includes(lead.status)) return false;
+    }
+
+    // Filtro por origem
+    if (options?.originFilter && options.originFilter.length > 0) {
+      if (!lead.origem || !options.originFilter.includes(lead.origem)) return false;
+    }
+
+    return true;
+  });
+
+  const totalLeads = filteredLeads.length;
   
   // ✅ APENAS LEADS COM STATUS "Vendido" contam para vendas
-  const leadsGanhos = leads.filter(lead => lead.status === 'Vendido');
+  const leadsGanhos = filteredLeads.filter(lead => lead.status === 'Vendido');
   const vendasFechadas = leadsGanhos.length;
   
   // ✅ CÁLCULOS APENAS PARA LEADS "GANHO"
@@ -136,7 +167,13 @@ export async function getDashboardStats() {
     const valorComIva = lead.valor_venda_com_iva || 0;
     return sum + (valorComIva / 1.23);
   }, 0);
-  const comissaoTotal = leadsGanhos.reduce((sum, lead) => sum + (lead.comissao_valor || 0), 0);
+  // Se comissao_valor não existir, calcular com base em 5% do valor sem IVA
+  const comissaoTotal = leadsGanhos.reduce((sum, lead) => {
+    const has = typeof lead.comissao_valor === 'number' && !isNaN(lead.comissao_valor);
+    if (has) return sum + (lead.comissao_valor || 0);
+    const calculo = calcularValoresParaGanho(lead.valor_venda_com_iva || 0);
+    return sum + calculo.comissaoValor;
+  }, 0);
   
   // ✅ TAXA DE CONVERSÃO: Ganhos / Total Leads
   const taxaConversao = totalLeads > 0 ? (vendasFechadas / totalLeads) * 100 : 0;
@@ -146,14 +183,103 @@ export async function getDashboardStats() {
   const comissaoMedia = vendasFechadas > 0 ? comissaoTotal / vendasFechadas : 0;
 
   // Contar por status
-  const leadsPorStatus = leads.reduce((acc: Record<string, number>, lead) => {
+  const leadsPorStatus = filteredLeads.reduce((acc: Record<string, number>, lead) => {
     const status = lead.status || 'Sem Status';
     acc[status] = (acc[status] || 0) + 1;
     return acc;
   }, {});
 
+  // Contar por origem
+  const leadsPorOrigem = filteredLeads.reduce((acc: Record<string, number>, lead) => {
+    const origem = (lead.origem || 'Outros') as string;
+    acc[origem] = (acc[origem] || 0) + 1;
+    return acc;
+  }, {});
+
   // ✅ LEADS COM PRÓXIMA AÇÃO (TAREFAS)
-  const leadsComTarefas = leads.filter(lead => lead.proxima_acao || lead.data_proxima_acao).length;
+  const leadsComTarefas = filteredLeads.filter(lead => lead.proxima_acao || lead.data_proxima_acao).length;
+  const hoje = new Date();
+  const tarefasVencidas = filteredLeads.filter(lead => {
+    if (!lead.data_proxima_acao) return false;
+    const d = new Date(lead.data_proxima_acao);
+    const concluida = (lead as any).tarefa_concluida === true;
+    return d < hoje && !concluida;
+  }).length;
+  const proximas7Dias = filteredLeads.filter(lead => {
+    if (!lead.data_proxima_acao) return false;
+    const d = new Date(lead.data_proxima_acao);
+    const diff = (d.getTime() - hoje.getTime()) / (1000 * 3600 * 24);
+    return diff >= 0 && diff <= 7;
+  }).length;
+
+  // Novos leads por período (por mês)
+  function keyByGroup(date: Date): string {
+    if (groupBy === 'day') return date.toISOString().slice(0, 10);
+    if (groupBy === 'quarter') return `${date.getFullYear()}-Q${Math.floor(date.getMonth() / 3) + 1}`;
+    // month
+    return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+  }
+
+  const novosPorMes = filteredLeads.reduce((acc: Record<string, number>, lead) => {
+    if (!lead.data_entrada) return acc;
+    const d = new Date(lead.data_entrada);
+    const k = keyByGroup(d);
+    acc[k] = (acc[k] || 0) + 1;
+    return acc;
+  }, {});
+
+  // Vendas por mês e comissões por mês (usando updated_at como proxy da data de venda)
+  const vendasPorMes = leadsGanhos.reduce((acc: Record<string, number>, lead) => {
+    const base = lead.updated_at || lead.data_atualizacao || lead.data_entrada || new Date().toISOString();
+    const d = new Date(base);
+    const k = keyByGroup(d);
+    acc[k] = (acc[k] || 0) + (lead.valor_venda_com_iva || 0);
+    return acc;
+  }, {});
+  const comissoesPorMes = leadsGanhos.reduce((acc: Record<string, number>, lead) => {
+    const base = lead.updated_at || lead.data_atualizacao || lead.data_entrada || new Date().toISOString();
+    const d = new Date(base);
+    const k = keyByGroup(d);
+    const has = typeof lead.comissao_valor === 'number' && !isNaN(lead.comissao_valor);
+    const com = has ? (lead.comissao_valor || 0) : calcularValoresParaGanho(lead.valor_venda_com_iva || 0).comissaoValor;
+    acc[k] = (acc[k] || 0) + com;
+    return acc;
+  }, {});
+
+  // Pipeline potencial
+  const pipelineStatuses = ['Em Negociação', 'Proposta Enviada'];
+  const leadsPipeline = filteredLeads.filter(l => pipelineStatuses.includes(l.status || ''));
+  const valorPipeline = leadsPipeline.reduce((s, l) => s + (l.valor_proposta || 0), 0);
+  const comissaoPipeline = leadsPipeline.reduce((s, l) => {
+    const valor = l.valor_proposta || 0;
+    const semIva = valor / 1.23;
+    return s + semIva * 0.05;
+  }, 0);
+
+  // Conversão por origem
+  const conversaoPorOrigem: Record<string, number> = {};
+  const porOrigemCounts: Record<string, { total: number; vendidos: number }> = {};
+  filteredLeads.forEach((l) => {
+    const o = (l.origem || 'Outros') as string;
+    porOrigemCounts[o] = porOrigemCounts[o] || { total: 0, vendidos: 0 };
+    porOrigemCounts[o].total += 1;
+    if (l.status === 'Vendido') porOrigemCounts[o].vendidos += 1;
+  });
+  Object.entries(porOrigemCounts).forEach(([o, v]) => {
+    conversaoPorOrigem[o] = v.total > 0 ? Math.round(((v.vendidos / v.total) * 100) * 10) / 10 : 0;
+  });
+
+  // Aging (tempo médio entre entrada e atualização final)
+  function diffDays(a?: string, b?: string) {
+    if (!a || !b) return null;
+    const da = new Date(a).getTime();
+    const db = new Date(b).getTime();
+    return Math.abs(db - da) / (1000 * 3600 * 24);
+  }
+  const vendidos = filteredLeads.filter(l => l.status === 'Vendido');
+  const perdidos = filteredLeads.filter(l => l.status === 'Perdido');
+  const diasMediosVenda = vendidos.length > 0 ? Math.round((vendidos.reduce((s, l) => s + (diffDays(l.data_entrada, l.updated_at || l.data_atualizacao) || 0), 0) / vendidos.length) * 10) / 10 : 0;
+  const diasMediosPerda = perdidos.length > 0 ? Math.round((perdidos.reduce((s, l) => s + (diffDays(l.data_entrada, l.updated_at || l.data_atualizacao) || 0), 0) / perdidos.length) * 10) / 10 : 0;
 
   return {
     totalLeads,
@@ -164,8 +290,20 @@ export async function getDashboardStats() {
     taxaConversao: Math.round(taxaConversao * 10) / 10,
     valorMedioVenda: Math.round(valorMedioVenda * 100) / 100,
     comissaoMedia: Math.round(comissaoMedia * 100) / 100,
+    ticketMedioSemIva: vendasFechadas > 0 ? Math.round((valorTotalSemIva / vendasFechadas) * 100) / 100 : 0,
     leadsPorStatus,
-    leadsComTarefas // ✅ Para a página de Tarefas
+    leadsPorOrigem,
+    novosPorMes,
+    vendasPorMes,
+    comissoesPorMes,
+    leadsComTarefas, // ✅ Para a página de Tarefas
+    tarefasVencidas,
+    proximas7Dias,
+    valorPipeline: Math.round(valorPipeline * 100) / 100,
+    comissaoPipeline: Math.round(comissaoPipeline * 100) / 100,
+    conversaoPorOrigem,
+    diasMediosVenda,
+    diasMediosPerda
   };
 }
 
@@ -235,6 +373,18 @@ export const leadsAPI = {
       comissao_valor: 0
     };
 
+    // Aplicar configurações locais (IVA/comissão) se existirem
+    if (typeof window !== 'undefined') {
+      try {
+        const raw = localStorage.getItem('settings');
+        if (raw) {
+          const cfg = JSON.parse(raw);
+          if (typeof cfg.iva_taxa === 'number') leadData.taxa_iva = cfg.iva_taxa / 100;
+          if (typeof cfg.comissao_percentagem === 'number') leadData.comissao_percentagem = cfg.comissao_percentagem / 100;
+        }
+      } catch {}
+    }
+
     // ✅ STATUS - validar e usar valor correto
     if (lead.status && validarStatus(lead.status)) {
       leadData.status = lead.status;
@@ -266,7 +416,10 @@ export const leadsAPI = {
         
         // ✅ SÓ CALCULA COMISSÃO SE O STATUS FOR "Vendido"
         if (leadData.status === 'Vendido') {
-          const calculos = calcularValoresParaGanho(valor);
+          const calculos = calcularValoresParaGanho(valor, {
+            taxaIva: leadData.taxa_iva ?? 0.23,
+            comissaoPercent: leadData.comissao_percentagem ?? 0.05,
+          });
           leadData.comissao_valor = calculos.comissaoValor;
         }
       }
@@ -366,9 +519,20 @@ export const leadsAPI = {
       }
     }
 
-    // SEMPRE usar valores fixos para evitar problemas
-    updateData.taxa_iva = 0.2300;
-    updateData.comissao_percentagem = 0.0500;
+    // Usar valores configurados locais, com fallback aos fixos
+    let taxaIvaLocal = 0.23; let comissaoLocal = 0.05;
+    if (typeof window !== 'undefined') {
+      try {
+        const raw = localStorage.getItem('settings');
+        if (raw) {
+          const cfg = JSON.parse(raw);
+          if (typeof cfg.iva_taxa === 'number') taxaIvaLocal = cfg.iva_taxa / 100;
+          if (typeof cfg.comissao_percentagem === 'number') comissaoLocal = cfg.comissao_percentagem / 100;
+        }
+      } catch {}
+    }
+    updateData.taxa_iva = taxaIvaLocal;
+    updateData.comissao_percentagem = comissaoLocal;
 
     updateData.data_atualizacao = new Date().toISOString();
     updateData.updated_at = new Date().toISOString();

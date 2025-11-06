@@ -32,6 +32,15 @@ export default function SettingsPage() {
       setAuthStatus('failure');
       toast.error('Falha na conexão com o Google Calendar.');
     }
+
+    // Carregar configurações salvas localmente
+    try {
+      const raw = localStorage.getItem('settings');
+      if (raw) {
+        const saved = JSON.parse(raw);
+        setSettings((prev) => ({ ...prev, ...saved }));
+      }
+    } catch {}
   }, []);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
@@ -44,7 +53,12 @@ export default function SettingsPage() {
   };
 
   const handleSave = () => {
-    toast.success('Configurações guardadas com sucesso!');
+    try {
+      localStorage.setItem('settings', JSON.stringify(settings));
+      toast.success('Configurações guardadas com sucesso!');
+    } catch {
+      toast.error('Não foi possível guardar as configurações');
+    }
   };
 
   const handleConnectGoogle = () => {
