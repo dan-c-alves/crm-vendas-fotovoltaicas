@@ -11,6 +11,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.database import init_db
 from routes import leads, auth, upload
 from routes import calendar as calendar_routes
+# Remova a importação de config.settings se ela contiver ALLOWED_ORIGINS/REGEX
 
 print("🚀 Iniciando CRM API...")
 print(f"DATABASE_URL: {os.getenv('DATABASE_URL', 'NÃO CONFIGURADO')[:50]}...")
@@ -21,17 +22,17 @@ app = FastAPI(
     version="1.0.0",
 )
 
-# Inicialização do DB no startup (evita rodar em import)
+# Inicializar a base de dados como evento de startup
 @app.on_event("startup")
 def on_startup():
     print("Conectando e inicializando o banco de dados...")
     init_db()
 
-# Whitelist de origens explícitas
+# Configurar CORS com as origens explícitas
 origins = [
-    "https://insightful-light-production.up.railway.app",  # Frontend
-    "http://localhost:3000",  # Dev local
-    "https://1b619e43-b2e8-434d-ba34-b246a8074d20.railway.app",  # Backend (opcional)
+    "https://insightful-light-production.up.railway.app", # O seu Frontend
+    "http://localhost:3000", # Desenvolvimento local
+    "https://1b619e43-b2e8-434d-ba34-b246a8074d20.railway.app", # O seu próprio Backend
 ]
 
 app.add_middleware(
@@ -40,7 +41,7 @@ app.add_middleware(
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
-)
+ )
 
 # Incluir Rotas
 app.include_router(leads.router)
