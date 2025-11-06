@@ -16,25 +16,34 @@ function LoginContent() {
   const searchParams = useSearchParams()
 
   useEffect(() => {
-    // Verificar se já está autenticado
-    const token = localStorage.getItem('auth_token')
-    if (token) {
-      router.replace('/leads')
-      return
-    }
-
-    // Verificar se voltou do Google com token
+    // PRIORIDADE 1: Verificar se voltou do Google com token
     const tokenFromUrl = searchParams?.get('token')
     const error = searchParams?.get('error')
 
     if (tokenFromUrl) {
+      // Salvar token e redirecionar imediatamente
       localStorage.setItem('auth_token', tokenFromUrl)
       toast.success('Login realizado com sucesso!')
-      setTimeout(() => router.replace('/leads'), 1000)
-    } else if (error === 'unauthorized') {
+      // Redirecionar imediatamente sem setTimeout
+      router.push('/leads')
+      return
+    }
+    
+    if (error === 'unauthorized') {
       toast.error('Acesso negado! Apenas danilocalves86@gmail.com pode acessar.')
-    } else if (error === 'auth_failed') {
+      return
+    }
+    
+    if (error === 'auth_failed') {
       toast.error('Erro na autenticação. Tente novamente.')
+      return
+    }
+
+    // PRIORIDADE 2: Verificar se já está autenticado
+    const existingToken = localStorage.getItem('auth_token')
+    if (existingToken) {
+      router.push('/leads')
+      return
     }
   }, [searchParams, router])
 
