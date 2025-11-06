@@ -6,12 +6,13 @@ import os
 # Carregar variáveis de ambiente do .env
 load_dotenv()
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
+from starlette.middleware.base import BaseHTTPMiddleware
+from starlette.responses import Response
 from app.database import init_db
 from routes import leads, auth, upload
 from routes import calendar as calendar_routes
-# Remova a importação de config.settings se ela contiver ALLOWED_ORIGINS/REGEX
 
 print("🚀 Iniciando CRM API...")
 print(f"DATABASE_URL: {os.getenv('DATABASE_URL', 'NÃO CONFIGURADO')[:50]}...")
@@ -35,6 +36,26 @@ origins = [
     "https://1b619e43-b2e8-434d-ba34-b246a8074d20.railway.app", # O seu próprio Backend
 ]
 
+# Middleware para forçar CORS correto (sobrescreve injeção do Railway)
+class ForceCORSMiddleware(BaseHTTPMiddleware):
+    async def dispatch(self, request: Request, call_next):
+        origin = request.headers.get("origin", "")
+        
+        # Processar a requisição
+        response = await call_next(request)
+        
+        # Forçar headers CORS corretos se a origem for permitida
+        if origin in origins:
+            response.headers["Access-Control-Allow-Origin"] = origin
+            response.headers["Access-Control-Allow-Credentials"] = "true"
+            response.headers["Access-Control-Allow-Methods"] = "*"
+            response.headers["Access-Control-Allow-Headers"] = "*"
+        
+        return response
+
+# Adicionar middleware de CORS forçado ANTES do CORSMiddleware padrão
+app.add_middleware(ForceCORSMiddleware)
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=origins,
@@ -56,6 +77,20 @@ def read_root():
 @app.get("/health")
 def healthcheck():
     return {"status": "ok"}
+
+# Handler para OPTIONS (preflight CORS)
+@app.options("/{full_path:path}")
+async def options_handler(request: Request):
+    origin = request.headers.get("origin", "")
+    headers = {}
+    
+    if origin in origins:
+        headers["Access-Control-Allow-Origin"] = origin
+        headers["Access-Control-Allow-Credentials"] = "true"
+        headers["Access-Control-Allow-Methods"] = "GET, POST, PUT, DELETE, OPTIONS, PATCH"
+        headers["Access-Control-Allow-Headers"] = "*"
+    
+    return Response(content="", headers=headers, status_code=200)
 
 if __name__ == "__main__":
     import uvicorn
