@@ -23,8 +23,12 @@ function LoginContent() {
     const error = searchParams?.get('error')
 
     if (tokenFromUrl) {
-      // Salvar token e redirecionar imediatamente
+      // Salvar token no localStorage
       localStorage.setItem('auth_token', tokenFromUrl)
+      
+      // Salvar token nos cookies também (para o middleware)
+      document.cookie = `auth_token=${tokenFromUrl}; path=/; max-age=${30 * 24 * 60 * 60}; SameSite=Lax`
+      
       toast.success('Login realizado com sucesso!')
       // Redirecionar imediatamente sem setTimeout
       router.push('/leads')
@@ -44,6 +48,8 @@ function LoginContent() {
     // PRIORIDADE 2: Verificar se já está autenticado
     const existingToken = localStorage.getItem('auth_token')
     if (existingToken) {
+      // Garantir que o token também está nos cookies
+      document.cookie = `auth_token=${existingToken}; path=/; max-age=${30 * 24 * 60 * 60}; SameSite=Lax`
       router.push('/leads')
       return
     }
