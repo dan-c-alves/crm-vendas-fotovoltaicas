@@ -1,4 +1,4 @@
-ï»¿"use client"
+"use client"
 import { useEffect, useState, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import toast, { Toaster } from 'react-hot-toast'
@@ -9,7 +9,7 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL ||
     ? 'https://crm-vendas-fotovoltaicas-production.up.railway.app'
     : 'http://localhost:8000')
 
-console.log('ðŸ”§ API URL configured:', API_URL)
+console.log('?? API URL configured:', API_URL)
 
 function LoginContent() {
   const [rememberMe, setRememberMe] = useState(true)
@@ -26,7 +26,7 @@ function LoginContent() {
       // Salvar token no localStorage
       localStorage.setItem('auth_token', tokenFromUrl)
       
-      // Salvar token nos cookies tambÃ©m (para o middleware)
+      // Salvar token nos cookies também (para o middleware)
       document.cookie = `auth_token=${tokenFromUrl}; path=/; max-age=${30 * 24 * 60 * 60}; SameSite=Lax`
       
       toast.success('Login realizado com sucesso!')
@@ -41,14 +41,14 @@ function LoginContent() {
     }
     
     if (error === 'auth_failed') {
-      toast.error('Erro na autenticaÃ§Ã£o. Tente novamente.')
+      toast.error('Erro na autenticação. Tente novamente.')
       return
     }
 
-    // PRIORIDADE 2: Verificar se jÃ¡ estÃ¡ autenticado
+    // PRIORIDADE 2: Verificar se já está autenticado
     const existingToken = localStorage.getItem('auth_token')
     if (existingToken) {
-      // Garantir que o token tambÃ©m estÃ¡ nos cookies
+      // Garantir que o token também está nos cookies
       document.cookie = `auth_token=${existingToken}; path=/; max-age=${30 * 24 * 60 * 60}; SameSite=Lax`
       router.push('/dashboard')
       return
@@ -92,7 +92,7 @@ function LoginContent() {
         border: '1px solid rgba(255,255,255,0.2)',
         boxShadow: '0 20px 60px rgba(0,0,0,0.3)'
       }}>
-        {/* Logo e TÃ­tulo */}
+        {/* Logo e Título */}
         <div style={{ textAlign: 'center', marginBottom: '40px' }}>
           <div style={{
             width: '80px',
@@ -118,11 +118,11 @@ function LoginContent() {
             CRM Fotovoltaico
           </h1>
           <p style={{ color: '#93c5fd', fontSize: '14px' }}>
-            Sistema de GestÃ£o de Vendas
+            Sistema de Gestão de Vendas
           </p>
         </div>
 
-        {/* BotÃ£o Google Login */}
+        {/* Botão Google Login */}
         <button
           onClick={handleGoogleLogin}
           disabled={loading}
@@ -192,7 +192,7 @@ function LoginContent() {
           Manter-me conectado por 30 dias
         </label>
 
-        {/* RodapÃ© */}
+        {/* Rodapé */}
         <div style={{
           textAlign: 'center',
           paddingTop: '24px',
@@ -203,8 +203,8 @@ function LoginContent() {
             color: 'rgba(255,255,255,0.5)',
             lineHeight: '1.5'
           }}>
-            ðŸ”’ Sistema protegido<br />
-            Acesso restrito a usuÃ¡rios autorizados
+            ?? Sistema protegido<br />
+            Acesso restrito a usuários autorizados
           </p>
         </div>
       </div>
