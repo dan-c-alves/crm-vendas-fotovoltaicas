@@ -191,7 +191,7 @@ def atualizar_lead(lead_id: int, lead_update: LeadUpdate, db: Session = Depends(
             if new_proxima_acao and new_proxima_acao != old_proxima_acao and new_proxima_acao > datetime.now():
                 
                 # 1. Obter o token do utilizador (assumindo ID 1)
-                user = db.query(UserModel).filter(UserModel.id == 1).first()
+                user = db.query(UserModel).filter(UserModel.id == 1).first()  # type: ignore
                 if user and user.google_calendar_token:
                     
                     try:
@@ -223,7 +223,7 @@ def atualizar_lead(lead_id: int, lead_update: LeadUpdate, db: Session = Depends(
                         
             # Se a data foi removida, eliminar o evento
             elif new_proxima_acao is None and lead.google_event_id:
-                user = db.query(UserModel).filter(UserModel.id == 1).first()
+                user = db.query(UserModel).filter(UserModel.id == 1).first()  # type: ignore
                 if user and user.google_calendar_token:
                     manager = GoogleCalendarManager(token=user.google_calendar_token)
                     manager.delete_event(lead.google_event_id)
@@ -270,7 +270,7 @@ def concluir_tarefa(lead_id: int, db: Session = Depends(get_db)):
         
         # Eliminar evento do Google Calendar se existir
         if lead.google_event_id:
-            user = db.query(UserModel).filter(UserModel.id == 1).first()
+            user = db.query(UserModel).filter(UserModel.id == 1).first()  # type: ignore
             if user and user.google_calendar_token:
                 try:
                     manager = GoogleCalendarManager(token=user.google_calendar_token)
@@ -300,7 +300,7 @@ def eliminar_lead(lead_id: int, db: Session = Depends(get_db)):
         
         # Eliminar evento do Google Calendar se existir
         if lead.google_event_id:
-             user = db.query(UserModel).filter(UserModel.id == 1).first()
+             user = db.query(UserModel).filter(UserModel.id == 1).first()  # type: ignore
              if user and user.google_calendar_token:
                 manager = GoogleCalendarManager(token=user.google_calendar_token)
                 manager.delete_event(lead.google_event_id)

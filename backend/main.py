@@ -64,7 +64,7 @@ class ForceCorrectCORSMiddleware(BaseHTTPMiddleware):
 
 # Gerenciador de ciclo de vida com lifespan
 @asynccontextmanager
-async def lifespan(app: FastAPI):
+async def lifespan(app: FastAPI):  # type: ignore
     # Startup
     print("Conectando e inicializando o banco de dados...")
     from app.database import init_db
@@ -77,7 +77,7 @@ app = FastAPI(
     title="CRM Vendas Fotovoltaicas API",
     description="API para gestão de leads, vendas e métricas.",
     version="1.0.0",
-    lifespan=lifespan
+    lifespan=lifespan  # type: ignore
 )
 
 # IMPORTANTE: Adicionar nosso middleware PRIMEIRO (ele será executado por ÚLTIMO na resposta)
