@@ -57,6 +57,7 @@ export default function TarefasPage() {
   const [isDateModalOpen, setIsDateModalOpen] = useState(false);
   const [selectedTaskId, setSelectedTaskId] = useState<number | null>(null);
   const [newDateTime, setNewDateTime] = useState('');
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc'); // 'asc' = mais próximo primeiro
 
   const fetchTasks = async () => {
     try {
@@ -233,14 +234,24 @@ export default function TarefasPage() {
               Clientes agendados para contacto - ordenados por data
             </p>
           </div>
-          <button
-            onClick={fetchTasks}
-            className="btn btn-primary flex items-center gap-2"
-            disabled={loading}
-          >
-            <FiRefreshCw className={loading ? 'animate-spin' : ''} />
-            Atualizar
-          </button>
+          <div className="flex items-center gap-3">
+            <select
+              value={sortOrder}
+              onChange={(e) => setSortOrder(e.target.value as 'asc' | 'desc')}
+              className="px-4 py-2 bg-dark-700 border border-dark-600 rounded-lg text-white focus:border-primary-500 focus:outline-none"
+            >
+              <option value="asc">📅 Mais próximo primeiro</option>
+              <option value="desc">📅 Mais longe primeiro</option>
+            </select>
+            <button
+              onClick={fetchTasks}
+              className="btn btn-primary flex items-center gap-2"
+              disabled={loading}
+            >
+              <FiRefreshCw className={loading ? 'animate-spin' : ''} />
+              Atualizar
+            </button>
+          </div>
         </div>
 
         {/* Stats */}
@@ -301,8 +312,11 @@ export default function TarefasPage() {
                   {tasks.tarefas_agendadas
                     .sort((a, b) => {
                       if (a.data_agendada && b.data_agendada) {
-                        // Ordenar por data - mais recente primeiro (DESC)
-                        return new Date(b.data_agendada).getTime() - new Date(a.data_agendada).getTime();
+                        const dateA = new Date(a.data_agendada).getTime();
+                        const dateB = new Date(b.data_agendada).getTime();
+                        // Se sortOrder for 'asc', mais próximo primeiro (ASC)
+                        // Se sortOrder for 'desc', mais longe primeiro (DESC)
+                        return sortOrder === 'asc' ? dateA - dateB : dateB - dateA;
                       }
                       return 0;
                     })

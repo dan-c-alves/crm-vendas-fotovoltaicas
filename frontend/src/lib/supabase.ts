@@ -18,7 +18,7 @@ export interface Lead {
   email: string
   telefone: string
   morada?: string
-  status?: 'Entrada de Lead' | 'Em Análise' | 'Proposta Enviada' | 'Em Negociação' | 'Ganho' | 'Perdido' | 'Cancelado'
+  status?: 'Entrada de Lead' | 'Em Análise' | 'Proposta Enviada' | 'Em Negociação' | 'Vendido' | 'Perdido' | 'Cancelado'
   origem?: 'Website' | 'Facebook' | 'Instagram' | 'Google Ads' | 'Indicação' | 'Telefone' | 'Email' | 'Evento' | 'Outros'
   interesse?: string
   observacoes?: string
@@ -74,8 +74,8 @@ export function validarOrigem(origem: string): boolean {
   return ORIGENS_VALIDAS.includes(origem as any);
 }
 
-// ✅ FUNÇÃO PARA CALCULAR VALORES APENAS PARA STATUS "GANHO"
-export function calcularValoresParaGanho(valorComIva: number, opts?: { taxaIva?: number; comissaoPercent?: number }): { 
+// ✅ FUNÇÃO PARA CALCULAR VALORES APENAS PARA STATUS "VENDIDO"
+export function calcularValoresParaVendido(valorComIva: number, opts?: { taxaIva?: number; comissaoPercent?: number }): { 
   valorSemIva: number; 
   comissaoValor: number;
   valorIva: number;
@@ -119,10 +119,11 @@ export async function getDashboardStats(options?: {
   statusFilter?: string[];
   originFilter?: string[];
 }) {
-  // Buscar todos os leads
+  // Buscar apenas leads ATIVOS
   const { data: leads, error } = await supabase
     .from('leads')
-    .select('*');
+    .select('*')
+    .eq('ativo', true);
 
   if (error) {
     console.error('Erro ao buscar stats:', error);
@@ -161,7 +162,7 @@ export async function getDashboardStats(options?: {
   const leadsGanhos = filteredLeads.filter(lead => lead.status === 'Vendido');
   const vendasFechadas = leadsGanhos.length;
   
-  // ✅ CÁLCULOS APENAS PARA LEADS "GANHO"
+  // ✅ CÁLCULOS APENAS PARA LEADS "VENDIDO"
   const valorTotalComIva = leadsGanhos.reduce((sum, lead) => sum + (lead.valor_venda_com_iva || 0), 0);
   const valorTotalSemIva = leadsGanhos.reduce((sum, lead) => {
     const valorComIva = lead.valor_venda_com_iva || 0;
@@ -171,11 +172,11 @@ export async function getDashboardStats(options?: {
   const comissaoTotal = leadsGanhos.reduce((sum, lead) => {
     const has = typeof lead.comissao_valor === 'number' && !isNaN(lead.comissao_valor);
     if (has) return sum + (lead.comissao_valor || 0);
-    const calculo = calcularValoresParaGanho(lead.valor_venda_com_iva || 0);
+    const calculo = calcularValoresParaVendido(lead.valor_venda_com_iva || 0);
     return sum + calculo.comissaoValor;
   }, 0);
   
-  // ✅ TAXA DE CONVERSÃO: Ganhos / Total Leads
+  // ✅ TAXA DE CONVERSÃO: Vendidos / Total Leads
   const taxaConversao = totalLeads > 0 ? (vendasFechadas / totalLeads) * 100 : 0;
   
   // ✅ VALOR MÉDIO E COMISSÃO MÉDIA APENAS PARA VENDAS
@@ -241,7 +242,7 @@ export async function getDashboardStats(options?: {
     const d = new Date(base);
     const k = keyByGroup(d);
     const has = typeof lead.comissao_valor === 'number' && !isNaN(lead.comissao_valor);
-    const com = has ? (lead.comissao_valor || 0) : calcularValoresParaGanho(lead.valor_venda_com_iva || 0).comissaoValor;
+    const com = has ? (lead.comissao_valor || 0) : calcularValoresParaVendido(lead.valor_venda_com_iva || 0).comissaoValor;
     acc[k] = (acc[k] || 0) + com;
     return acc;
   }, {});
@@ -309,11 +310,12 @@ export async function getDashboardStats(options?: {
 
 // API simplificada usando o cliente Supabase diretamente
 export const leadsAPI = {
-  // Buscar todos os leads
+  // Buscar todos os leads ATIVOS
   async getAll(filters?: { status?: string; search?: string; page?: number; limit?: number }) {
     let query = supabase
       .from('leads')
-      .select('*')
+      .select('*', { count: 'exact' })
+      .eq('ativo', true)
       .order('data_entrada', { ascending: false })
 
     // Aplicar filtros
@@ -408,7 +410,7 @@ export const leadsAPI = {
     if (lead.data_proxima_acao) leadData.data_proxima_acao = lead.data_proxima_acao; // ✅ DATA para Tarefas
     if (lead.tags) leadData.tags = lead.tags;
 
-    // ✅ CAMPOS NUMÉRICOS - SÓ CALCULA SE FOR STATUS "GANHO"
+    // ✅ CAMPOS NUMÉRICOS - SÓ CALCULA SE FOR STATUS "VENDIDO"
     if (lead.valor_venda_com_iva !== undefined && lead.valor_venda_com_iva !== null) {
       const valor = Number(lead.valor_venda_com_iva);
       if (!isNaN(valor) && valor >= 0) {
@@ -416,7 +418,7 @@ export const leadsAPI = {
         
         // ✅ SÓ CALCULA COMISSÃO SE O STATUS FOR "Vendido"
         if (leadData.status === 'Vendido') {
-          const calculos = calcularValoresParaGanho(valor, {
+          const calculos = calcularValoresParaVendido(valor, {
             taxaIva: leadData.taxa_iva ?? 0.23,
             comissaoPercent: leadData.comissao_percentagem ?? 0.05,
           });
@@ -494,7 +496,7 @@ export const leadsAPI = {
     if (updates.data_proxima_acao !== undefined) updateData.data_proxima_acao = updates.data_proxima_acao; // ✅ DATA para Tarefas
     if (updates.tags !== undefined) updateData.tags = updates.tags;
 
-    // ✅ CAMPOS NUMÉRICOS - SÓ RECALCULA SE MUDAR PARA "GANHO"
+    // ✅ CAMPOS NUMÉRICOS - SÓ RECALCULA SE MUDAR PARA "VENDIDO"
     if (updates.valor_venda_com_iva !== undefined) {
       const valor = Number(updates.valor_venda_com_iva);
       console.log('🔧 Processando valor:', valor);
@@ -505,7 +507,7 @@ export const leadsAPI = {
         const statusAtual = updates.status || updateData.status;
         console.log('🔧 Status para cálculo:', statusAtual);
         if (statusAtual === 'Vendido') {
-          const calculos = calcularValoresParaGanho(valor);
+          const calculos = calcularValoresParaVendido(valor);
           updateData.comissao_valor = calculos.comissaoValor;
           console.log('💰 Comissão calculada:', calculos.comissaoValor);
         }

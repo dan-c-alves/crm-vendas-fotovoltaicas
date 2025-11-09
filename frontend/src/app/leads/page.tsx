@@ -56,7 +56,7 @@ export default function LeadsPage() {
   const fetchLeads = async (currentPage = 1, search = '', status = 'Todos') => {
     try {
       setLoading(true);
-      let url = `/api/leads?page=${currentPage}&limit=20`;
+      let url = `/api/leads?page=${currentPage}&page_size=1000`;
       
       if (search.trim()) {
         url += `&search=${encodeURIComponent(search.trim())}`;
@@ -252,26 +252,33 @@ export default function LeadsPage() {
           </div>
 
           {totalPages > 1 && (
-            <div className="flex justify-center items-center gap-4 mt-6">
-              <button
-                onClick={() => handlePageChange(page - 1)}
-                disabled={page <= 1}
-                className="btn btn-secondary disabled:opacity-50"
-              >
-                ← Anterior
-              </button>
-              
-              <span className="text-dark-300">
-                Página {page} de {totalPages}
-              </span>
-              
-              <button
-                onClick={() => handlePageChange(page + 1)}
-                disabled={page >= totalPages}
-                className="btn btn-secondary disabled:opacity-50"
-              >
-                Próxima →
-              </button>
+            <div className="glass p-4 rounded-lg mt-6">
+              <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
+                <button
+                  onClick={() => handlePageChange(page - 1)}
+                  disabled={page <= 1}
+                  className="btn btn-secondary disabled:opacity-50 disabled:cursor-not-allowed w-full sm:w-auto"
+                >
+                  ← Página Anterior
+                </button>
+                
+                <div className="text-center">
+                  <p className="text-dark-300 font-medium">
+                    Página {page} de {totalPages}
+                  </p>
+                  <p className="text-dark-500 text-sm">
+                    Mostrando até 1000 leads por página
+                  </p>
+                </div>
+                
+                <button
+                  onClick={() => handlePageChange(page + 1)}
+                  disabled={page >= totalPages}
+                  className="btn btn-secondary disabled:opacity-50 disabled:cursor-not-allowed w-full sm:w-auto"
+                >
+                  Próxima Página →
+                </button>
+              </div>
             </div>
           )}
         </>
