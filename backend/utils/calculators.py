@@ -103,7 +103,7 @@ class AnalyticsCalculator:
             vendas_mes[chave] = 0.0
         
         for lead in leads_data:
-            if lead.get('status') == 'Ganho' and lead.get('data_atualizacao'):
+            if lead.get('status') == 'Vendido' and lead.get('data_atualizacao'):
                 data = lead['data_atualizacao']
                 if isinstance(data, str):
                     data = datetime.fromisoformat(data)
@@ -126,7 +126,7 @@ class AnalyticsCalculator:
             comissoes_mes[chave] = 0.0
         
         for lead in leads_data:
-            if lead.get('status') == 'Ganho' and lead.get('data_atualizacao'):
+            if lead.get('status') == 'Vendido' and lead.get('data_atualizacao'):
                 data = lead['data_atualizacao']
                 if isinstance(data, str):
                     data = datetime.fromisoformat(data)
@@ -142,15 +142,12 @@ class AnalyticsCalculator:
         """Obter dados do funil de vendas"""
         funil_stages = [
             "Entrada de Lead",
-            "Contactados",
-            "Levantamento Técnico", 
-            "Em Orçamentação",
-            "Proposta Entregue",
-            "Negociação",
-            "Hot Lead",
-            "Ganho",
-            "Perdidos",
-            "Não Atende"
+            "Em Análise",
+            "Proposta Enviada",
+            "Em Negociação",
+            "Vendido",
+            "Perdido",
+            "Cancelado"
         ]
         
         funil = {}

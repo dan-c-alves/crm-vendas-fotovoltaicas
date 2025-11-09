@@ -3,11 +3,34 @@
 """
 Modelo de dados para Leads
 """
-from sqlalchemy import Column, Integer, String, Float, DateTime, Text, Boolean
+from sqlalchemy import Column, Integer, String, Float, DateTime, Text, Boolean, Enum as SAEnum
 from sqlalchemy.ext.declarative import declarative_base
 from datetime import datetime
 
 Base = declarative_base()
+
+STATUS_VALUES = [
+    "Entrada de Lead",
+    "Em Análise",
+    "Proposta Enviada",
+    "Em Negociação",
+    "Vendido",
+    "Perdido",
+    "Cancelado"
+]
+
+ORIGEM_VALUES = [
+    "Website",
+    "Facebook",
+    "Instagram",
+    "Google Ads",
+    "Indicação",
+    "Telefone",
+    "Email",
+    "Evento",
+    "Outros",
+]
+
 
 class Lead(Base):
     """Modelo de Lead para o CRM"""
@@ -19,8 +42,8 @@ class Lead(Base):
     telefone = Column(String(20))
     morada = Column(String(500))
     
-    # Status do funil de vendas
-    status = Column(String(50), default="Entrada de Lead", index=True)
+    # Status do funil de vendas (Enum em PostgreSQL: lead_status)
+    status = Column(SAEnum(*STATUS_VALUES, name="lead_status", native_enum=True), default="Entrada de Lead", index=True)
     
     # Informações financeiras
     valor_venda_com_iva = Column(Float, default=0.0)
@@ -50,7 +73,7 @@ class Lead(Base):
     ativo = Column(Boolean, default=True)
     
     # Metadados
-    origem = Column(String(100))  # Como o lead foi adquirido
+    origem = Column(SAEnum(*ORIGEM_VALUES, name="lead_origem", native_enum=True), default="Outros", index=True)  # Como o lead foi adquirido
     tags = Column(String(500))  # Tags separadas por vírgula
     
     def __repr__(self):
@@ -58,6 +81,16 @@ class Lead(Base):
     
     def to_dict(self):
         """Converter para dicionário"""
+        # Helper para converter datetime para ISO string de forma segura
+        def safe_isoformat(value):
+            if value is None:
+                return None
+            if isinstance(value, str):
+                return value  # Já é string
+            if hasattr(value, 'isoformat'):
+                return value.isoformat()
+            return str(value)
+        
         return {
             "id": getattr(self, 'id', None),
             "nome_lead": getattr(self, 'nome_lead', ''),
@@ -72,9 +105,9 @@ class Lead(Base):
             "comissao_valor": getattr(self, 'comissao_valor', 0.0),
             "notas_conversa": getattr(self, 'notas_conversa', None),
             "motivo_perda": getattr(self, 'motivo_perda', None),
-            "data_entrada": self.data_entrada.isoformat() if getattr(self, 'data_entrada', None) else None,
-            "data_atualizacao": self.data_atualizacao.isoformat() if getattr(self, 'data_atualizacao', None) else None,
-            "proxima_acao": self.proxima_acao.isoformat() if getattr(self, 'proxima_acao', None) else None,
+            "data_entrada": safe_isoformat(getattr(self, 'data_entrada', None)),
+            "data_atualizacao": safe_isoformat(getattr(self, 'data_atualizacao', None)),
+            "proxima_acao": safe_isoformat(getattr(self, 'proxima_acao', None)),
             "url_imagem_cliente": getattr(self, 'url_imagem_cliente', None), # NOVO
             "google_event_id": getattr(self, 'google_event_id', None), # NOVO
             "tarefa_concluida": getattr(self, 'tarefa_concluida', False), # NOVO

@@ -2,6 +2,7 @@
 
 from dotenv import load_dotenv
 import os
+from contextlib import asynccontextmanager
 
 # Carregar variáveis de ambiente do .env
 load_dotenv()
@@ -61,21 +62,26 @@ class ForceCorrectCORSMiddleware(BaseHTTPMiddleware):
         
         return response
 
+# Gerenciador de ciclo de vida com lifespan
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # Startup
+    print("Conectando e inicializando o banco de dados...")
+    from app.database import init_db
+    init_db()
+    yield
+    # Shutdown (se necessário)
+    print("Encerrando aplicação...")
+
 app = FastAPI(
     title="CRM Vendas Fotovoltaicas API",
     description="API para gestão de leads, vendas e métricas.",
     version="1.0.0",
+    lifespan=lifespan
 )
 
 # IMPORTANTE: Adicionar nosso middleware PRIMEIRO (ele será executado por ÚLTIMO na resposta)
 app.add_middleware(ForceCorrectCORSMiddleware)
-
-# Inicializar a base de dados como evento de startup
-@app.on_event("startup")
-def on_startup():
-    print("Conectando e inicializando o banco de dados...")
-    from app.database import init_db
-    init_db()
 
 # Incluir Rotas
 from routes import leads, auth, upload

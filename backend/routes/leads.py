@@ -59,12 +59,12 @@ def criar_lead(lead: LeadCreate, db: Session = Depends(get_db)):
 @router.get("/", response_model=PaginatedResponse)
 def listar_leads(
     page: int = Query(1, ge=1),
-    page_size: int = Query(20, ge=1, le=100),
+    page_size: int = Query(100, ge=1, le=1000),
     status: Optional[str] = None,
     search: Optional[str] = None,
     db: Session = Depends(get_db)
 ):
-    """Listar leads com paginação e filtros"""
+    """Listar leads com paginação e filtros (100 por página por padrão, até 1000)"""
     try:
         query = db.query(LeadModel).filter(LeadModel.ativo == True)
         
@@ -326,10 +326,10 @@ def obter_estatisticas_dashboard(db: Session = Depends(get_db)):
         
         # Estatísticas básicas
         total_leads = len(leads_data)
-        leads_ganhos = [l for l in leads_data if l['status'] == 'Ganho']
+        leads_ganhos = [l for l in leads_data if l['status'] == 'Vendido']
         vendas_fechadas = len(leads_ganhos)
         
-        # Calcular valores financeiros apenas para leads "Ganho"
+        # Calcular valores financeiros apenas para leads "Vendido"
         valor_total_com_iva = 0.0
         valor_total_sem_iva = 0.0
         comissao_total = 0.0
@@ -387,9 +387,8 @@ def obter_opcoes_status(db: Session = Depends(get_db)):
     """Obter opções de status disponíveis"""
     return {
         "status_options": [
-            "Entrada de Lead", "Contactados", "Levantamento Técnico", 
-            "Em Orçamentação", "Proposta Entregue", "Negociação", 
-            "Hot Lead", "Ganho", "Perdidos", "Não Atende"
+            "Entrada de Lead", "Em Análise", "Proposta Enviada",
+            "Em Negociação", "Vendido", "Perdido", "Cancelado"
         ]
     }
 
