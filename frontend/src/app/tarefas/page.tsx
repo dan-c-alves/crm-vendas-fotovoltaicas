@@ -67,8 +67,10 @@ export default function TarefasPage() {
       const response = await fetch('/api/leads?page=1&page_size=100');
       if (response.ok) {
         const data = await response.json();
+        // Mostrar TODOS os leads que têm uma data (mesmo que já tenham sido concluídos antes).
+        // A lógica de backend agora reabre tarefa_concluida=False ao definir nova data.
         const leadsWithTasks = data.data.filter((lead: any) => 
-          lead.proxima_acao && !lead.tarefa_concluida
+          lead.proxima_acao
         );
         
         const tasksData = {

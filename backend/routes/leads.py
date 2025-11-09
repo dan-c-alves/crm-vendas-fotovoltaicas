@@ -180,6 +180,10 @@ def atualizar_lead(lead_id: int, lead_update: LeadUpdate, db: Session = Depends(
                     print(f"⚠️  Erro ao converter data '{data_value}': {e}")
             
             update_data['proxima_acao'] = new_proxima_acao
+
+            # REGRAS: Sempre que uma nova data válida for definida, reabrir a tarefa (tarefa_concluida = False)
+            if new_proxima_acao:
+                update_data['tarefa_concluida'] = False
             
             # --- LÓGICA DE AGENDAMENTO NO GOOGLE CALENDAR ---
             
@@ -219,11 +223,13 @@ def atualizar_lead(lead_id: int, lead_update: LeadUpdate, db: Session = Depends(
                         
             # Se a data foi removida, eliminar o evento
             elif new_proxima_acao is None and lead.google_event_id:
-                 user = db.query(UserModel).filter(UserModel.id == 1).first()
-                 if user and user.google_calendar_token:
+                user = db.query(UserModel).filter(UserModel.id == 1).first()
+                if user and user.google_calendar_token:
                     manager = GoogleCalendarManager(token=user.google_calendar_token)
                     manager.delete_event(lead.google_event_id)
                     update_data['google_event_id'] = None
+                # Se remover a data, marcar tarefa como concluída para não aparecer nas listas
+                update_data['tarefa_concluida'] = True
         
         # --- FIM LÓGICA GOOGLE CALENDAR ---
         
